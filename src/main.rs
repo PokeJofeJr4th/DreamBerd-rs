@@ -4,6 +4,7 @@ use std::{error::Error, fs, path::PathBuf};
 
 use clap::Parser;
 
+mod interpreter;
 mod lexer;
 mod parser;
 mod types;

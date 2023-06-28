@@ -25,7 +25,7 @@ macro_rules! multi_character_pattern {
     };
 }
 
-macro_rules! parse_string {
+macro_rules! lex_string {
     ($chars:ident $end:expr) => {{
         let mut string_buf = String::new();
         while let Some(next) = $chars.next() {
@@ -60,14 +60,13 @@ fn inner_tokenize<T: Iterator<Item = char>>(chars: &mut Peekable<T>) -> SResult<
         ':' => Token::Colon,
         '.' => Token::Dot,
         ',' => Token::Comma,
-        '!' => Token::Bang,
         '?' => Token::Question,
         '+' => multi_character_pattern!(chars Token::Plus; {'=' => Token::PlusEq}),
         '-' => multi_character_pattern!(chars Token::Tack; {'=' => Token::TackEq}),
         '*' => multi_character_pattern!(chars Token::Star; {'=' => Token::StarEq}),
-        '/' => multi_character_pattern!(chars Token::Slash; {'+' => Token::SlashEq}),
-        '"' => parse_string!(chars '"'),
-        '\'' => parse_string!(chars '\''),
+        '/' => multi_character_pattern!(chars Token::Slash; {'=' => Token::SlashEq}),
+        '"' => lex_string!(chars '"'),
+        '\'' => lex_string!(chars '\''),
         '=' => {
             let mut eq_count = 1;
             while chars.peek() == Some(&'=') {
@@ -75,6 +74,14 @@ fn inner_tokenize<T: Iterator<Item = char>>(chars: &mut Peekable<T>) -> SResult<
                 eq_count += 1;
             }
             Token::Equal(eq_count)
+        }
+        '!' => {
+            let mut bang_count = 1;
+            while chars.peek() == Some(&'!') {
+                chars.next();
+                bang_count += 1;
+            }
+            Token::Bang(bang_count)
         }
         _ => {
             if char.is_whitespace() {
