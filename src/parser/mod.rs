@@ -2,6 +2,8 @@ use std::iter::Peekable;
 
 use crate::types::prelude::*;
 
+mod grouping;
+
 pub fn parse(tokens: Vec<Token>) -> SResult<Syntax> {
     let mut tokens = tokens.into_iter().peekable();
     let mut syntax = Vec::new();
@@ -63,10 +65,14 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
                                     tokens.next();
                                     consume_whitespace(tokens);
                                 }
-                                Token::RParen => break,
-                                _ => args_buf.push(inner_parse(tokens)?),
+                                Token::RParen => {
+                                    tokens.next();
+                                    break;
+                                }
+                                _ => args_buf.push(parse_group(tokens)?),
                             }
                         }
+                        consume_bang(tokens);
                         Ok(Syntax::Function(id, args_buf))
                     }
                     // get the value of the variable
@@ -82,12 +88,59 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
                 }
                 statements_buf.push(inner_parse(tokens)?);
             }
-            Ok(Syntax::Block(statements_buf))
+            if tokens.next() == Some(Token::RSquirrely) {
+                Ok(Syntax::Block(statements_buf))
+            } else {
+                Err(String::from("Expected `}`"))
+            }
         }
         Some(Token::Space(_)) => inner_parse(tokens),
+        Some(Token::LParen) => {
+            let syn = parse_group(tokens)?;
+            if tokens.next() == Some(Token::RParen) {
+                Ok(syn)
+            } else {
+                Err(String::from("Expected `)`"))
+            }
+        }
         Some(other) => Err(format!("Unexpected token `{other:?}`")),
         None => Err(String::from("Unexpected End of File")),
     }
+}
+
+fn parse_group<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<Syntax> {
+    let mut groups_buf = Vec::new();
+    let tail;
+    loop {
+        let left = inner_parse(tokens)?;
+        let mut spc = if let Some(&Token::Space(spc)) = tokens.peek() {
+            tokens.next();
+            spc
+        } else {
+            0
+        };
+        let op = match tokens.peek() {
+            Some(&Token::Equal(eq)) => Operation::Equal(eq),
+            Some(Token::Plus) => Operation::Add,
+            Some(Token::PlusEq) => Operation::AddEq,
+            Some(Token::Tack) => Operation::Sub,
+            Some(Token::TackEq) => Operation::SubEq,
+            Some(Token::Star) => Operation::Mul,
+            Some(Token::StarEq) => Operation::MulEq,
+            Some(Token::Slash) => Operation::Div,
+            Some(Token::SlashEq) => Operation::DivEq,
+            _ => {
+                tail = left;
+                break;
+            }
+        };
+        tokens.next();
+        if let Some(&Token::Space(spc_right)) = tokens.peek() {
+            spc += spc_right;
+        }
+        groups_buf.push((left, op, spc));
+    }
+    Ok(grouping::group(groups_buf, tail))
 }
 
 fn consume_whitespace<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) {
