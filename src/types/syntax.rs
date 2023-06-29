@@ -9,7 +9,7 @@ pub enum Syntax {
     Debug(Box<Syntax>, u8),
 }
 
-#[derive(PartialEq, Eq, Debug, Hash, Clone)]
+#[derive(PartialEq, Eq, Debug, Hash, Clone, Copy)]
 pub enum VarType {
     ConstConst,
     ConstVar,
@@ -18,7 +18,7 @@ pub enum VarType {
     // ConstConstConst,
 }
 
-#[derive(PartialEq, Eq, Debug, Hash, Clone)]
+#[derive(PartialEq, Eq, Debug, Hash, Clone, Copy)]
 pub enum Operation {
     Equal(u8),
     Add,

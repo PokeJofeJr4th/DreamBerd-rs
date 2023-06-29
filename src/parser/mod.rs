@@ -60,21 +60,8 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
                     Some(Token::LParen) => {
                         tokens.next();
                         consume_whitespace(tokens);
-                        let mut args_buf = Vec::new();
-                        while let Some(tok) = tokens.peek() {
-                            match tok {
-                                Token::Comma => {
-                                    tokens.next();
-                                    consume_whitespace(tokens);
-                                }
-                                Token::RParen => {
-                                    tokens.next();
-                                    break;
-                                }
-                                _ => args_buf.push(parse_group(tokens)?),
-                            }
-                        }
-                        Ok(consume_bang(Syntax::Function(id, args_buf), tokens))
+                        let input = get_tuple(tokens)?;
+                        Ok(consume_bang(Syntax::Function(id, input), tokens))
                     }
                     // get the value of the variable
                     _ => Ok(Syntax::Ident(id)),
@@ -84,10 +71,16 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
         Some(Token::LSquirrely) => {
             let mut statements_buf = Vec::new();
             while let Some(tok) = tokens.peek() {
-                if tok == &Token::RSquirrely {
-                    break;
+                match tok {
+                    Token::RSquirrely => break,
+                    Token::Space(_) => {
+                        tokens.next();
+                        continue;
+                    }
+                    _ => {}
                 }
-                statements_buf.push(inner_parse(tokens)?);
+                let inner = inner_parse(tokens)?;
+                statements_buf.push(consume_bang(inner, tokens));
             }
             if tokens.next() == Some(Token::RSquirrely) {
                 Ok(Syntax::Block(statements_buf))
@@ -97,11 +90,11 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
         }
         Some(Token::Space(_)) => inner_parse(tokens),
         Some(Token::LParen) => {
-            let syn = parse_group(tokens)?;
-            if tokens.next() == Some(Token::RParen) {
-                Ok(syn)
+            let val = get_tuple(tokens)?;
+            if let [x] = &val[..] {
+                Ok(x.clone())
             } else {
-                Err(String::from("Expected `)`"))
+                Ok(Syntax::Block(val))
             }
         }
         Some(other) => Err(format!("Unexpected token `{other:?}`")),
@@ -162,4 +155,22 @@ fn consume_bang<T: Iterator<Item = Token>>(syn: Syntax, tokens: &mut Peekable<T>
         }
         _ => syn,
     }
+}
+
+fn get_tuple<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<Vec<Syntax>> {
+    let mut args_buf = Vec::new();
+    while let Some(tok) = tokens.peek() {
+        match tok {
+            Token::Comma => {
+                tokens.next();
+                consume_whitespace(tokens);
+            }
+            Token::RParen => {
+                tokens.next();
+                break;
+            }
+            _ => args_buf.push(parse_group(tokens)?),
+        }
+    }
+    Ok(args_buf)
 }

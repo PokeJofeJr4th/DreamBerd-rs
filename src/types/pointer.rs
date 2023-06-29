@@ -6,19 +6,21 @@ use std::{
     rc::Rc,
 };
 
-use super::Value;
+use super::{Value, VarType};
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Pointer {
-    Const(Rc<Value>),
-    Var(Rc<RefCell<Value>>),
+    ConstConst(Rc<Value>),
+    ConstVar(Rc<RefCell<Value>>),
+    VarConst(Rc<Value>),
+    VarVar(Rc<RefCell<Value>>),
 }
 
 impl Display for Pointer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Const(val) => write!(f, "{val}"),
-            Self::Var(val) => write!(f, "{}", val.borrow()),
+            Self::ConstConst(val) | Self::VarConst(val) => write!(f, "{val}"),
+            Self::ConstVar(val) | Self::VarVar(val) => write!(f, "{}", val.borrow()),
         }
     }
 }
@@ -27,8 +29,8 @@ impl Hash for Pointer {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         core::mem::discriminant(self).hash(state);
         match self {
-            Self::Const(val) => val.hash(state),
-            Self::Var(var) => var.borrow().hash(state),
+            Self::ConstConst(val) | Self::VarConst(val) => val.hash(state),
+            Self::ConstVar(var) | Self::VarVar(var) => var.borrow().hash(state),
         }
     }
 }
@@ -36,35 +38,57 @@ impl Hash for Pointer {
 impl Pointer {
     pub fn clone_inner(&self) -> Value {
         match self {
-            Self::Const(val) => (**val).clone(),
-            Self::Var(val) => (**val).borrow().clone(),
+            Self::ConstConst(val) | Self::VarConst(val) => (**val).clone(),
+            Self::VarVar(val) | Self::ConstVar(val) => (**val).borrow().clone(),
         }
     }
 
-    pub fn as_const(&self) -> Self {
-        match self {
-            Self::Const(val) => Self::Const(val.clone()),
-            Self::Var(val) => Self::Const(Rc::from(val.borrow().clone())),
-        }
-    }
-
-    pub fn as_var(&self) -> Self {
-        match self {
-            Self::Const(val) => Self::Var(Rc::new(RefCell::new((**val).clone()))),
-            Self::Var(val) => Self::Var(val.clone()),
+    pub fn convert(&self, vt: VarType) -> Self {
+        match (self, vt) {
+            (
+                Self::ConstConst(val) | Self::VarConst(val),
+                VarType::ConstConst | VarType::VarConst,
+            ) => {
+                if vt == VarType::ConstConst {
+                    Self::ConstConst(val.clone())
+                } else {
+                    Self::VarConst(val.clone())
+                }
+            }
+            (Self::ConstVar(val) | Self::VarVar(val), VarType::ConstVar | VarType::VarVar) => {
+                if vt == VarType::VarVar {
+                    Self::VarVar(val.clone())
+                } else {
+                    Self::ConstVar(val.clone())
+                }
+            }
+            (Self::ConstConst(val) | Self::VarConst(val), VarType::ConstVar | VarType::VarVar) => {
+                if vt == VarType::ConstVar {
+                    Self::ConstVar(Rc::new(RefCell::new((**val).clone())))
+                } else {
+                    Self::VarVar(Rc::new(RefCell::new((**val).clone())))
+                }
+            }
+            (Self::VarVar(val) | Self::ConstVar(val), VarType::ConstConst | VarType::VarConst) => {
+                if vt == VarType::ConstConst {
+                    Self::ConstConst(Rc::new(val.borrow().clone()))
+                } else {
+                    Self::VarConst(Rc::new(val.borrow().clone()))
+                }
+            }
         }
     }
 
     pub fn eq(&self, rhs: &Self, precision: u8) -> Self {
-        Self::Const(Rc::new(self.clone_inner().eq(rhs.clone_inner(), precision)))
+        Self::ConstConst(Rc::new(self.clone_inner().eq(rhs.clone_inner(), precision)))
     }
 }
 
 impl PartialEq<Value> for Pointer {
     fn eq(&self, other: &Value) -> bool {
         match self {
-            Self::Const(val) => &**val == other,
-            Self::Var(val) => &*val.borrow() == other,
+            Self::ConstConst(val) | Self::VarConst(val) => &**val == other,
+            Self::VarVar(val) | Self::ConstVar(val) => &*val.borrow() == other,
         }
     }
 }
@@ -107,12 +131,12 @@ impl Div for Pointer {
 
 impl From<Value> for Pointer {
     fn from(value: Value) -> Self {
-        Self::Const(Rc::new(value))
+        Self::ConstConst(Rc::new(value))
     }
 }
 
 impl From<&str> for Pointer {
     fn from(value: &str) -> Self {
-        Self::Const(Rc::new(Value::String(String::from(value))))
+        Self::ConstConst(Rc::new(Value::String(String::from(value))))
     }
 }

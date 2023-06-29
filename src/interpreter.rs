@@ -37,47 +37,47 @@ impl State {
         }
         // otherwise, parse it in global context
         if let Ok(val) = key.parse() {
-            let new_val = Pointer::Const(Rc::new(Value::Number(val)));
+            let new_val = Pointer::ConstConst(Rc::new(Value::Number(val)));
             self.current.insert(String::from(key), new_val.clone());
             new_val
         } else if regex!("^f?u?n?c?t?i?o?n?$").is_match(key) {
-            let v = Pointer::Const(Rc::new(Value::Keyword(Keyword::Function)));
+            let v = Pointer::ConstConst(Rc::new(Value::Keyword(Keyword::Function)));
             self.current.insert(String::from(key), v.clone());
             v
         } else if key == "delete" {
-            let v = Pointer::Const(Rc::new(Value::Keyword(Keyword::Delete)));
+            let v = Pointer::ConstConst(Rc::new(Value::Keyword(Keyword::Delete)));
             self.current.insert(String::from(key), v.clone());
             v
         } else if key == "const" {
-            let v = Pointer::Const(Rc::new(Value::Keyword(Keyword::Const)));
+            let v = Pointer::ConstConst(Rc::new(Value::Keyword(Keyword::Const)));
             self.current.insert(String::from(key), v.clone());
             v
         } else if key == "var" {
-            let v = Pointer::Const(Rc::new(Value::Keyword(Keyword::Var)));
+            let v = Pointer::ConstConst(Rc::new(Value::Keyword(Keyword::Var)));
             self.current.insert(String::from(key), v.clone());
             v
         } else if key == "if" {
-            let v = Pointer::Const(Rc::new(Value::Keyword(Keyword::If)));
+            let v = Pointer::ConstConst(Rc::new(Value::Keyword(Keyword::If)));
             self.current.insert(String::from(key), v.clone());
             v
         } else if key == "true" {
-            let v = Pointer::Const(Rc::new(Value::from(true)));
+            let v = Pointer::ConstConst(Rc::new(Value::from(true)));
             self.current.insert(String::from(key), v.clone());
             v
         } else if key == "false" {
-            let v = Pointer::Const(Rc::new(Value::from(false)));
+            let v = Pointer::ConstConst(Rc::new(Value::from(false)));
             self.current.insert(String::from(key), v.clone());
             v
         } else if key == "maybe" {
-            let v = Pointer::Const(Rc::new(Value::Boolean(Boolean::Maybe)));
+            let v = Pointer::ConstConst(Rc::new(Value::Boolean(Boolean::Maybe)));
             self.current.insert(String::from(key), v.clone());
             v
         } else if key == "undefined" {
-            let v = Pointer::Const(Rc::new(Value::Undefined));
+            let v = Pointer::ConstConst(Rc::new(Value::Undefined));
             self.current.insert(String::from(key), v.clone());
             v
         } else {
-            let v = Pointer::Const(Rc::new(Value::String(String::from(key))));
+            let v = Pointer::ConstConst(Rc::new(Value::String(String::from(key))));
             self.current.insert(String::from(key), v.clone());
             v
         }
@@ -143,19 +143,15 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
         }
         Syntax::Declare(var_type, ident, value) => {
             let val = inner_interpret(value, state.clone())?;
-            (*state).borrow_mut().insert(
-                ident.clone(),
-                match var_type {
-                    VarType::ConstConst | VarType::VarConst => val.as_const(),
-                    VarType::VarVar | VarType::ConstVar => val.as_var(),
-                },
-            );
+            state
+                .borrow_mut()
+                .insert(ident.clone(), val.convert(*var_type));
             // println!("{state:#?}");
             Ok(Pointer::from(Value::Undefined))
         }
         Syntax::String(str) => Ok(Pointer::from(str.as_ref())),
         Syntax::Function(func, args) => {
-            let func = (*state).borrow_mut().get(func).clone_inner();
+            let func = state.borrow_mut().get(func).clone_inner();
             // println!("{state:#?}");
             let result = match func {
                 Value::Keyword(Keyword::If) => {
@@ -171,15 +167,36 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
                 }
                 Value::Keyword(Keyword::Delete) => {
                     if let [Syntax::Ident(key)] = &args[..] {
-                        (*state).borrow_mut().delete(key);
+                        state.borrow_mut().delete(key);
                     }
                     Value::Undefined
                 }
+                Value::Keyword(Keyword::Function) => {
+                    let [Syntax::Ident(name), args, body] = &args[..] else {
+                        return Err(format!("Invalid arguments for `Function`: `{args:?}`"))
+                    };
+                    let args = match args {
+                        Syntax::Block(args) => args.clone(),
+                        other => vec![other.clone()],
+                    };
+                    let args: Vec<String> = args
+                        .into_iter()
+                        .map(|syn| match syn {
+                            Syntax::Ident(str) => Ok(str),
+                            other => Err(format!("Invalid parameter name: `{other:?}`")),
+                        })
+                        .collect::<Result<_, _>>()?;
+                    let inner_val = Value::Function(args, body.clone());
+                    state
+                        .borrow_mut()
+                        .insert(name.clone(), Pointer::from(inner_val));
+                    Value::Undefined
+                }
 
-                other => return Err(format!("Can't call `{other:?}` as a function")),
+                other => return Err(format!("`{other:?}` is not a function")),
             };
             Ok(Pointer::from(result))
         }
-        Syntax::Ident(ident) => Ok((*state).borrow_mut().get(ident)),
+        Syntax::Ident(ident) => Ok(state.borrow_mut().get(ident)),
     }
 }
