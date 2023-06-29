@@ -9,6 +9,8 @@ use std::{
 
 use super::{SResult, Value, VarType};
 
+/// A pointer to a reference-counted value
+/// A `const const` and `var const` can point to the same value, as can a `const var` and `var var`.
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Pointer {
     ConstConst(Rc<Value>),
@@ -37,6 +39,7 @@ impl Hash for Pointer {
 }
 
 impl Pointer {
+    /// Get the value inside the pointer. This is not a deep clone and should be treated as a reference
     pub fn clone_inner(&self) -> Value {
         match self {
             Self::ConstConst(val) | Self::VarConst(val) => (**val).clone(),
@@ -44,6 +47,7 @@ impl Pointer {
         }
     }
 
+    /// Convert this poiner to a different type. Performs a deep clone if switching between `const` and `var`
     pub fn convert(&self, vt: VarType) -> Self {
         match (self, vt) {
             (
@@ -80,6 +84,12 @@ impl Pointer {
         }
     }
 
+    /// check equality with a given precision. Returns a `const const` pointer to a boolean
+    ///
+    /// 1. internal data must be pretty similar
+    /// 2. internal data must be identical with type coercion
+    /// 3. internal data must be identical without type coercion
+    /// 4. internal pointers must be identical
     pub fn eq(&self, rhs: &Self, precision: u8) -> Self {
         if precision >= 4 {
             Self::from(match (self, rhs) {
@@ -104,6 +114,7 @@ impl Pointer {
         }
     }
 
+    /// Apply the dot operator. This has two valid cases: float parsing and object indexing. Otherwise, it returns `undefined`
     pub fn dot(&self, rhs: Value) -> SResult<Self> {
         // can we return a mutable internal reference?
         let allow_modify = matches!(self, Self::ConstVar(_) | Self::VarVar(_));

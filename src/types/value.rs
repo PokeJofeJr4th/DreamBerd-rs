@@ -183,19 +183,20 @@ impl BitOr for Value {
 
 impl Value {
     pub fn eq(&self, rhs: Self, precision: u8) -> Self {
+        if precision == 2 {
+            return Self::from(format!("{self}") == format!("{rhs}"));
+        } else if precision == 1
+            && format!("{self}").to_lowercase().trim() == format!("{rhs}").to_lowercase().trim()
+        {
+            return Self::from(true);
+        }
         match (self, rhs) {
             (&Self::Number(lhs), Self::Number(rhs)) => {
                 Self::from(lhs == rhs || (precision == 1 && (lhs / rhs).ln().abs() < 0.1))
             }
-            (Self::String(lhs), Self::String(rhs)) => {
-                // println!("{lhs} =? {rhs}");
-                Self::from(if precision == 1 {
-                    lhs.to_lowercase().trim() == rhs.to_lowercase().trim()
-                } else {
-                    *lhs == rhs
-                })
-            }
-            _ => Self::Boolean(Boolean::Maybe),
+            (Self::String(lhs), Self::String(rhs)) => Self::from(*lhs == rhs),
+            (&Self::Keyword(lhs), Self::Keyword(rhs)) => Self::from(lhs == rhs),
+            _ => Self::from(false),
         }
     }
 
