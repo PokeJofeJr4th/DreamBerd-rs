@@ -127,6 +127,7 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
                 Operation::Sub => Ok(lhs_eval - rhs_eval),
                 Operation::Mul => Ok(lhs_eval * rhs_eval),
                 Operation::Div => Ok(lhs_eval / rhs_eval),
+                Operation::Dot => Ok(lhs_eval.dot(rhs_eval.clone_inner())?),
                 _ => todo!(),
             }
         }

@@ -29,4 +29,5 @@ pub enum Operation {
     MulEq,
     Div,
     DivEq,
+    Dot,
 }

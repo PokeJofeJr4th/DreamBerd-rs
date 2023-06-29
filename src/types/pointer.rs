@@ -6,7 +6,7 @@ use std::{
     rc::Rc,
 };
 
-use super::{Value, VarType};
+use super::{SResult, Value, VarType};
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Pointer {
@@ -102,6 +102,20 @@ impl Pointer {
             Self::from(self.clone_inner().eq(rhs.clone_inner(), precision))
         }
     }
+
+    pub fn dot(&self, rhs: Value) -> SResult<Self> {
+        // can we return a mutable internal reference?
+        let allow_modify = matches!(self, Self::ConstVar(_) | Self::VarVar(_));
+        let lhs = self.clone_inner();
+        match (lhs, rhs) {
+            (Value::Number(lhs), Value::Number(rhs)) => {
+                Ok(Self::from(format!("{lhs}.{rhs}").parse::<f64>().map_err(
+                    |e| format!("Error parsing `{lhs}.{rhs}`: {e}"),
+                )?))
+            }
+            _ => Ok(Self::from(Value::Undefined)),
+        }
+    }
 }
 
 impl PartialEq<Value> for Pointer {
@@ -164,5 +178,11 @@ impl From<bool> for Pointer {
 impl From<&str> for Pointer {
     fn from(value: &str) -> Self {
         Self::ConstConst(Rc::new(Value::String(String::from(value))))
+    }
+}
+
+impl From<f64> for Pointer {
+    fn from(value: f64) -> Self {
+        Self::ConstConst(Rc::new(Value::Number(value)))
     }
 }

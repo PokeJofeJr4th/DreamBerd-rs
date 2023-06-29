@@ -81,6 +81,15 @@ impl Add for Value {
         match (self, rhs) {
             (Self::Number(lhs), Self::Number(rhs)) => Self::Number(lhs + rhs),
             (Self::String(lhs), Self::String(rhs)) => Self::String(lhs + &rhs),
+            (Self::Boolean(bool), Self::Number(num)) | (Self::Number(num), Self::Boolean(bool)) => {
+                Self::Number(
+                    match bool {
+                        Boolean::False => 0.0,
+                        Boolean::Maybe => 0.5,
+                        Boolean::True => 1.0,
+                    } + num,
+                )
+            }
             _ => Self::Undefined,
         }
     }
@@ -98,9 +107,25 @@ impl Sub for Value {
 
 impl Mul for Value {
     type Output = Self;
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        clippy::cast_precision_loss
+    )]
     fn mul(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Self::Number(lhs), Self::Number(rhs)) => Self::Number(lhs * rhs),
+            (Self::String(str), Self::Number(num)) => {
+                let mut str_buf = str.repeat(num.abs().floor() as usize);
+                let portion = ((num.abs() - num.abs().floor()) * str.len() as f64) as usize;
+                if portion > 0 {
+                    str_buf.push_str(&str[0..portion]);
+                }
+                if num.is_sign_negative() {
+                    str_buf = str_buf.chars().rev().collect();
+                }
+                Self::String(str_buf)
+            }
             _ => Self::Undefined,
         }
     }

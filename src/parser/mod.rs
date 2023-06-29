@@ -123,6 +123,7 @@ fn parse_group<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
             Some(Token::StarEq) => Operation::MulEq,
             Some(Token::Slash) => Operation::Div,
             Some(Token::SlashEq) => Operation::DivEq,
+            Some(Token::Dot) => Operation::Dot,
             _ => {
                 tail = left;
                 break;
