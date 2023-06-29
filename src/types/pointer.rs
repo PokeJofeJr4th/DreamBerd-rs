@@ -1,6 +1,6 @@
 use core::hash::Hash;
 use std::fmt::Display;
-use std::ops::{BitAnd, BitOr};
+use std::ops::{AddAssign, BitAnd, BitOr, DivAssign, MulAssign, Neg, SubAssign};
 use std::{
     cell::RefCell,
     ops::{Add, Div, Mul, Sub},
@@ -115,6 +115,7 @@ impl Pointer {
     }
 
     /// Apply the dot operator. This has two valid cases: float parsing and object indexing. Otherwise, it returns `undefined`
+    #[allow(clippy::option_if_let_else, clippy::single_match_else)]
     pub fn dot(&self, rhs: Value) -> SResult<Self> {
         // can we return a mutable internal reference?
         let allow_modify = matches!(self, Self::ConstVar(_) | Self::VarVar(_));
@@ -125,6 +126,18 @@ impl Pointer {
                     |e| format!("Error parsing `{lhs}.{rhs}`: {e}"),
                 )?))
             }
+            (Value::Object(mut obj), key) => match obj.get(&key) {
+                Some(ptr) => Ok(ptr.clone()),
+                None => {
+                    let val = if allow_modify {
+                        Self::ConstVar(Rc::new(RefCell::new(Value::Undefined)))
+                    } else {
+                        Self::ConstConst(Rc::new(Value::Undefined))
+                    };
+                    obj.insert(key, val.clone());
+                    Ok(val)
+                }
+            },
             // TODO: Include the case for an object
             _ => Ok(Self::from(Value::Undefined)),
         }
@@ -148,6 +161,16 @@ impl Add for Pointer {
     }
 }
 
+impl AddAssign for Pointer {
+    fn add_assign(&mut self, rhs: Self) {
+        let (Self::ConstVar(val) | Self::VarVar(val)) = self else {
+            return
+        };
+        let value = val.borrow().clone() + rhs.clone_inner();
+        *val.borrow_mut() = value;
+    }
+}
+
 impl Sub for Pointer {
     type Output = Self;
 
@@ -156,11 +179,29 @@ impl Sub for Pointer {
     }
 }
 
+impl SubAssign for Pointer {
+    fn sub_assign(&mut self, rhs: Self) {
+        let (Self::ConstVar(val) | Self::VarVar(val)) = self else {
+            return
+        };
+        *val.borrow_mut() = val.borrow().clone() - rhs.clone_inner();
+    }
+}
+
 impl Mul for Pointer {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
         Self::from(self.clone_inner() * rhs.clone_inner())
+    }
+}
+
+impl MulAssign for Pointer {
+    fn mul_assign(&mut self, rhs: Self) {
+        let (Self::ConstVar(val) | Self::VarVar(val)) = self else {
+            return
+        };
+        *val.borrow_mut() = val.borrow().clone() * rhs.clone_inner();
     }
 }
 
@@ -173,6 +214,22 @@ impl Div for Pointer {
         } else {
             Self::from(self.clone_inner() / rhs.clone_inner())
         }
+    }
+}
+
+impl DivAssign for Pointer {
+    fn div_assign(&mut self, rhs: Self) {
+        let (Self::ConstVar(val) | Self::VarVar(val)) = self else {
+            return
+        };
+        *val.borrow_mut() = val.borrow().clone() / rhs.clone_inner();
+    }
+}
+
+impl Neg for Pointer {
+    type Output = Self;
+    fn neg(self) -> Self::Output {
+        Self::from(-self.clone_inner())
     }
 }
 

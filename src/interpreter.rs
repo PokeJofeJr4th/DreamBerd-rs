@@ -116,8 +116,12 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
             }
             Ok(evaluated)
         }
+        Syntax::Negate(content) => {
+            let evaluated = inner_interpret(content, state)?;
+            Ok(-evaluated)
+        }
         Syntax::Operation(lhs, op, rhs) => {
-            let lhs_eval = inner_interpret(lhs, state.clone())?;
+            let mut lhs_eval = inner_interpret(lhs, state.clone())?;
             let rhs_eval = inner_interpret(rhs, state)?;
             // println!("{lhs:?} op {rhs:?}");
             // println!("{lhs_eval:?} op {rhs_eval:?}");
@@ -130,6 +134,22 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
                 Operation::Dot => Ok(lhs_eval.dot(rhs_eval.clone_inner())?),
                 Operation::And => Ok(lhs_eval & rhs_eval),
                 Operation::Or => Ok(lhs_eval | rhs_eval),
+                Operation::AddEq => {
+                    lhs_eval += rhs_eval;
+                    Ok(lhs_eval)
+                }
+                Operation::SubEq => {
+                    lhs_eval -= rhs_eval;
+                    Ok(lhs_eval)
+                }
+                Operation::MulEq => {
+                    lhs_eval *= rhs_eval;
+                    Ok(lhs_eval)
+                }
+                Operation::DivEq => {
+                    lhs_eval /= rhs_eval;
+                    Ok(lhs_eval)
+                }
                 _ => todo!(),
             }
         }
@@ -142,7 +162,12 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
             for syn in iter {
                 inner_interpret(syn, state.clone())?;
             }
-            inner_interpret(last, state)
+            let res = inner_interpret(last, state)?;
+            if res == Value::Undefined {
+                Ok(Pointer::from(Value::empty_object()))
+            } else {
+                Ok(res)
+            }
         }
         Syntax::Declare(var_type, ident, value) => {
             let val = inner_interpret(value, state.clone())?;
@@ -153,53 +178,55 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
             Ok(Pointer::from(Value::Undefined))
         }
         Syntax::String(str) => Ok(Pointer::from(str.as_ref())),
-        Syntax::Function(func, args) => {
-            let func = state.borrow_mut().get(func).clone_inner();
-            // println!("{state:#?}");
-            let result = match func {
-                Value::Keyword(Keyword::If) => {
-                    let [condition, body] = &args[..] else {
-                        return Err(String::from("If statement requires two arguments: condition and body"))
-                    };
-                    let condition_evaluated = inner_interpret(condition, state.clone())?;
-                    // println!("{condition_evaluated:?}");
-                    if condition_evaluated == Value::from(true) {
-                        return inner_interpret(body, state);
-                    }
-                    Value::Undefined
-                }
-                Value::Keyword(Keyword::Delete) => {
-                    if let [Syntax::Ident(key)] = &args[..] {
-                        state.borrow_mut().delete(key);
-                    }
-                    Value::Undefined
-                }
-                Value::Keyword(Keyword::Function) => {
-                    let [Syntax::Ident(name), args, body] = &args[..] else {
-                        return Err(format!("Invalid arguments for `Function`: `{args:?}`"))
-                    };
-                    let args = match args {
-                        Syntax::Block(args) => args.clone(),
-                        other => vec![other.clone()],
-                    };
-                    let args: Vec<String> = args
-                        .into_iter()
-                        .map(|syn| match syn {
-                            Syntax::Ident(str) => Ok(str),
-                            other => Err(format!("Invalid parameter name: `{other:?}`")),
-                        })
-                        .collect::<Result<_, _>>()?;
-                    let inner_val = Value::Function(args, body.clone());
-                    state
-                        .borrow_mut()
-                        .insert(name.clone(), Pointer::from(inner_val));
-                    Value::Undefined
-                }
-
-                other => return Err(format!("`{other:?}` is not a function")),
-            };
-            Ok(Pointer::from(result))
-        }
+        Syntax::Function(func, args) => interpret_function(func, args, state),
         Syntax::Ident(ident) => Ok(state.borrow_mut().get(ident)),
     }
+}
+
+fn interpret_function(func: &str, args: &[Syntax], state: Rc<RefCell<State>>) -> SResult<Pointer> {
+    let func = state.borrow_mut().get(func).clone_inner();
+    // println!("{state:#?}");
+    let result = match func {
+        Value::Keyword(Keyword::If) => {
+            let [condition, body] = args else {
+                    return Err(String::from("If statement requires two arguments: condition and body"))
+                };
+            let condition_evaluated = inner_interpret(condition, state.clone())?;
+            // println!("{condition_evaluated:?}");
+            if condition_evaluated == Value::from(true) {
+                return inner_interpret(body, state);
+            }
+            Value::Undefined
+        }
+        Value::Keyword(Keyword::Delete) => {
+            if let [Syntax::Ident(key)] = args {
+                state.borrow_mut().delete(key);
+            }
+            Value::Undefined
+        }
+        Value::Keyword(Keyword::Function) => {
+            let [Syntax::Ident(name), args, body] = args else {
+                    return Err(format!("Invalid arguments for `Function`: `{args:?}`"))
+                };
+            let args = match args {
+                Syntax::Block(args) => args.clone(),
+                other => vec![other.clone()],
+            };
+            let args: Vec<String> = args
+                .into_iter()
+                .map(|syn| match syn {
+                    Syntax::Ident(str) => Ok(str),
+                    other => Err(format!("Invalid parameter name: `{other:?}`")),
+                })
+                .collect::<Result<_, _>>()?;
+            let inner_val = Value::Function(args, body.clone());
+            state
+                .borrow_mut()
+                .insert(name.clone(), Pointer::from(inner_val));
+            Value::Undefined
+        }
+
+        other => return Err(format!("`{other:?}` is not a function")),
+    };
+    Ok(Pointer::from(result))
 }

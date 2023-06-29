@@ -1,8 +1,8 @@
 use std::{
-    collections::HashMap,
+    collections::BTreeMap,
     fmt::Display,
     hash::Hash,
-    ops::{Add, BitAnd, BitOr, Div, Mul, Sub},
+    ops::{Add, BitAnd, BitOr, Div, Mul, Neg, Sub},
 };
 
 use super::{Pointer, Syntax};
@@ -39,10 +39,22 @@ pub enum Value {
     Boolean(Boolean),
     String(String),
     Number(f64),
-    Object(HashMap<Value, Pointer>),
+    Object(BTreeMap<Value, Pointer>),
     Function(Vec<String>, Syntax),
     Keyword(Keyword),
     Undefined,
+}
+
+impl PartialOrd for Value {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        todo!()
+    }
+}
+
+impl Ord for Value {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        todo!()
+    }
 }
 
 impl Eq for Value {}
@@ -159,6 +171,20 @@ impl Div for Value {
     }
 }
 
+impl Neg for Value {
+    type Output = Self;
+    fn neg(self) -> Self::Output {
+        match self {
+            Self::Boolean(Boolean::False) => Self::Boolean(Boolean::True),
+            Self::Boolean(Boolean::True) => Self::Boolean(Boolean::False),
+            Self::Boolean(Boolean::Maybe) => Self::Boolean(Boolean::Maybe),
+            Self::Number(num) => Self::Number(-num),
+            Self::String(str) => Self::String(str.chars().rev().collect()),
+            _ => Self::Undefined,
+        }
+    }
+}
+
 impl BitAnd for Value {
     type Output = Self;
     fn bitand(self, rhs: Self) -> Self::Output {
@@ -196,6 +222,15 @@ impl Value {
             }
             (Self::String(lhs), Self::String(rhs)) => Self::from(*lhs == rhs),
             (&Self::Keyword(lhs), Self::Keyword(rhs)) => Self::from(lhs == rhs),
+            (Self::String(ref str), Self::Number(num))
+            | (&Self::Number(num), Self::String(ref str)) => {
+                let Ok(str_parse) = str.parse::<f64>() else {
+                    return Self::from(false)
+                };
+                Self::from(
+                    num == str_parse || (precision == 1 && (num / str_parse).ln().abs() < 0.1),
+                )
+            }
             _ => Self::from(false),
         }
     }
@@ -214,6 +249,10 @@ impl Value {
             }
             _ => Boolean::Maybe,
         }
+    }
+
+    pub const fn empty_object() -> Self {
+        Self::Object(BTreeMap::new())
     }
 }
 

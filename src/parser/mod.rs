@@ -16,6 +16,7 @@ pub fn parse(tokens: Vec<Token>) -> SResult<Syntax> {
 fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<Syntax> {
     match tokens.next() {
         Some(Token::String(str)) => Ok(Syntax::String(str)),
+        Some(Token::Tack) => Ok(Syntax::Negate(Box::new(inner_parse(tokens)?))),
         Some(Token::Ident(id)) => {
             consume_whitespace(tokens);
             if id == "const" || id == "var" {
@@ -79,7 +80,7 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
                     }
                     _ => {}
                 }
-                let inner = inner_parse(tokens)?;
+                let inner = parse_group(tokens)?;
                 statements_buf.push(consume_bang(inner, tokens));
             }
             if tokens.next() == Some(Token::RSquirrely) {

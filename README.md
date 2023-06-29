@@ -53,7 +53,7 @@ This includes numbers, and other language constructs.
 
 ```
 const const 5 = 4!
-(2 + 2 === 5)? //true
+2 + 2 === 5? // true
 ```
 
 ## Booleans
@@ -75,15 +75,15 @@ const const name = "Luke"!
 DreamBerd has significant whitespace. Use spacing to specify the order of arithmetic operations.
 
 ```
-(1 + 2*3)? //7
-(1+2 * 3)? //9
+1 + 2*3? //7
+1+2 * 3? //9
 ```
 
 You can add strings together and multiply them by floats.
 
 ```
-("he" + "l"*2 "o" + " " + "world")? // "hello world"
-("johnny"*1.5)? // "johnnyjoh"
+"he" + "l"*2 "o" + " " + "world"? // "hello world"
+"johnny"*1.5? // "johnnyjoh"
 ```
 
 ### Dividing by Zero
@@ -91,7 +91,7 @@ You can add strings together and multiply them by floats.
 Dividing by zero returns undefined.
 
 ```
-(3 / 0)? // undefined
+3 / 0? // undefined
 ```
 
 ## Equality
@@ -101,28 +101,28 @@ JavaScript lets you do different levels of comparison. `==` for loose comparison
 You can use `==` to do a loose check.
 
 ```
-(3.14 == "3.14")? //true
+3.14 == "3.14"? //true
 ```
 
 You can use `===` to do a more precise check.
 
 ```
-(3.14 === "3.14")! //false
+3.14 === "3.14"? //false
 ```
 
 You can use `====` to be EVEN MORE precise!
 
 ```
 const const pi = 3.14!
-(pi ==== pi)? //true
-(3.14 ==== 3.14)? //false (this differs from the official DreamBerd specification)
-(3.14 ==== pi)? //false
+pi ==== pi? //true
+3.14 ==== 3.14? //false (this differs from the official DreamBerd specification)
+3.14 ==== pi? //false
 ```
 
 Finally, if you want to be much less precise, you can use `=`.
 
 ```
-(3 = 3.14)? //true
+3 = 3.14? //true
 ```
 
 ## Functions
@@ -144,7 +144,7 @@ To avoid confusion, the delete statement only works with identifiers like variab
 
 ```
 delete(3)!
-(2+1 == 3) // false
+2+1 == 3? // false
 ```
 
 DreamBerd is a multi-paradigm programming language, which means that you can delete the keywords and paradigms you don't like.

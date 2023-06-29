@@ -1,11 +1,13 @@
 use crate::types::prelude::*;
 
-use std::f64::consts as f64;
+use std::{f64::consts as f64, fmt::Display};
 
-fn eval(src: &str) -> SResult<Value> {
+fn eval<T: Display>(src: T) -> SResult<Value> {
     Ok(
-        crate::interpreter::interpret(&crate::parser::parse(crate::lexer::tokenize(src)?)?)?
-            .clone_inner(),
+        crate::interpreter::interpret(&crate::parser::parse(crate::lexer::tokenize(&format!(
+            "{{{src}}}"
+        ))?)?)?
+        .clone_inner(),
     )
 }
 
@@ -45,9 +47,25 @@ fn maybe_or_and() {
 
 #[test]
 fn comparisons() {
-    assert_eq!(eval("(\"true\" == true)"), Ok(Value::from(true)));
-    assert_eq!(eval("(\"true\" === true)"), Ok(Value::from(false)));
-    assert_eq!(eval("(\"false\" == true)"), Ok(Value::from(false)));
-    assert_eq!(eval("(\" TRUE \" = true)"), Ok(Value::from(true)));
-    assert_eq!(eval("(\" TRUE \" == true)"), Ok(Value::from(false)));
+    assert_eq!(eval("`true` == true"), Ok(Value::from(true)));
+    assert_eq!(eval("`true` === true"), Ok(Value::from(false)));
+    assert_eq!(eval("`false` == true"), Ok(Value::from(false)));
+    assert_eq!(eval("` TRUE\n\t ` = true"), Ok(Value::from(true)));
+    assert_eq!(eval("` TRUE ` == true"), Ok(Value::from(false)));
+}
+
+#[test]
+fn op_assign() {
+    assert_eq!(
+        eval("{const var count = 0! count += 1! count}"),
+        Ok(Value::Number(1.0))
+    );
+    assert_eq!(
+        eval("{const var msg = 'hello'! msg += 'world'! msg}"),
+        Ok(Value::String(String::from("helloworld")))
+    );
+    assert_eq!(
+        eval("{const var msg = 'i did '! msg += -msg! msg}"),
+        Ok(Value::String(String::from("i did  did i")))
+    );
 }
