@@ -80,7 +80,27 @@ impl Pointer {
     }
 
     pub fn eq(&self, rhs: &Self, precision: u8) -> Self {
-        Self::ConstConst(Rc::new(self.clone_inner().eq(rhs.clone_inner(), precision)))
+        if precision >= 4 {
+            Self::from(match (self, rhs) {
+                (
+                    Self::ConstConst(lhs) | Self::VarConst(lhs),
+                    Self::ConstConst(rhs) | Self::VarConst(rhs),
+                ) => unsafe {
+                    core::mem::transmute::<Rc<_>, u64>(lhs.clone())
+                        == core::mem::transmute::<Rc<_>, u64>(rhs.clone())
+                },
+                (
+                    Self::ConstVar(lhs) | Self::VarVar(lhs),
+                    Self::ConstVar(rhs) | Self::VarVar(rhs),
+                ) => unsafe {
+                    core::mem::transmute::<Rc<_>, u64>(lhs.clone())
+                        == core::mem::transmute::<Rc<_>, u64>(rhs.clone())
+                },
+                _ => false,
+            })
+        } else {
+            Self::from(self.clone_inner().eq(rhs.clone_inner(), precision))
+        }
     }
 }
 
@@ -132,6 +152,12 @@ impl Div for Pointer {
 impl From<Value> for Pointer {
     fn from(value: Value) -> Self {
         Self::ConstConst(Rc::new(value))
+    }
+}
+
+impl From<bool> for Pointer {
+    fn from(value: bool) -> Self {
+        Self::ConstConst(Rc::new(Value::from(value)))
     }
 }
 
