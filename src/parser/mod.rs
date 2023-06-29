@@ -124,6 +124,8 @@ fn parse_group<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
             Some(Token::Slash) => Operation::Div,
             Some(Token::SlashEq) => Operation::DivEq,
             Some(Token::Dot) => Operation::Dot,
+            Some(Token::And) => Operation::And,
+            Some(Token::Or) => Operation::Or,
             _ => {
                 tail = left;
                 break;

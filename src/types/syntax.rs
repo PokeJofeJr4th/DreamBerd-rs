@@ -30,4 +30,6 @@ pub enum Operation {
     Div,
     DivEq,
     Dot,
+    And,
+    Or,
 }

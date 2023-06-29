@@ -25,4 +25,6 @@ pub enum Token {
     Comma,
     Colon,
     Dot,
+    And,
+    Or,
 }

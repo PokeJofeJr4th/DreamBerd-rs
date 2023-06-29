@@ -2,7 +2,7 @@ use std::{
     collections::HashMap,
     fmt::Display,
     hash::Hash,
-    ops::{Add, Div, Mul, Sub},
+    ops::{Add, BitAnd, BitOr, Div, Mul, Sub},
 };
 
 use super::{Pointer, Syntax};
@@ -20,6 +20,16 @@ impl Display for Boolean {
             Self::True => write!(f, "true"),
             Self::False => write!(f, "false"),
             Self::Maybe => write!(f, "maybe"),
+        }
+    }
+}
+
+impl From<bool> for Boolean {
+    fn from(value: bool) -> Self {
+        if value {
+            Self::True
+        } else {
+            Self::False
         }
     }
 }
@@ -44,7 +54,9 @@ impl Display for Value {
             Self::String(str) => write!(f, "{str}"),
             Self::Number(num) => write!(f, "{num}"),
             Self::Object(obj) => todo!(),
-            Self::Function(func, args) => todo!(),
+            Self::Function(args, body) => {
+                write!(f, "{args:?} => {body:?}")
+            }
             Self::Keyword(kw) => write!(f, "{kw}"),
             Self::Undefined => write!(f, "undefined"),
         }
@@ -71,7 +83,7 @@ impl Hash for Value {
 
 impl From<bool> for Value {
     fn from(value: bool) -> Self {
-        Self::Boolean(if value { Boolean::True } else { Boolean::False })
+        Self::Boolean(Boolean::from(value))
     }
 }
 
@@ -147,6 +159,28 @@ impl Div for Value {
     }
 }
 
+impl BitAnd for Value {
+    type Output = Self;
+    fn bitand(self, rhs: Self) -> Self::Output {
+        match (self.bool(), rhs.bool()) {
+            (Boolean::False, _) | (_, Boolean::False) => Self::from(false),
+            (Boolean::True, Boolean::True) => Self::from(true),
+            _ => Self::Boolean(Boolean::Maybe),
+        }
+    }
+}
+
+impl BitOr for Value {
+    type Output = Self;
+    fn bitor(self, rhs: Self) -> Self::Output {
+        match (self.bool(), rhs.bool()) {
+            (Boolean::True, _) | (_, Boolean::True) => Self::from(true),
+            (Boolean::False, Boolean::False) => Self::from(false),
+            _ => Self::Boolean(Boolean::Maybe),
+        }
+    }
+}
+
 impl Value {
     pub fn eq(&self, rhs: Self, precision: u8) -> Self {
         match (self, rhs) {
@@ -162,6 +196,22 @@ impl Value {
                 })
             }
             _ => Self::Boolean(Boolean::Maybe),
+        }
+    }
+
+    pub fn bool(&self) -> Boolean {
+        match self {
+            Self::Boolean(bool) => *bool,
+            Self::Number(num) => {
+                if *num >= 1.0 {
+                    Boolean::True
+                } else if *num <= 0.0 {
+                    Boolean::False
+                } else {
+                    Boolean::Maybe
+                }
+            }
+            _ => Boolean::Maybe,
         }
     }
 }

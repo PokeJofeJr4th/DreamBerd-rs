@@ -1,5 +1,6 @@
 use core::hash::Hash;
 use std::fmt::Display;
+use std::ops::{BitAnd, BitOr};
 use std::{
     cell::RefCell,
     ops::{Add, Div, Mul, Sub},
@@ -113,6 +114,7 @@ impl Pointer {
                     |e| format!("Error parsing `{lhs}.{rhs}`: {e}"),
                 )?))
             }
+            // TODO: Include the case for an object
             _ => Ok(Self::from(Value::Undefined)),
         }
     }
@@ -160,6 +162,22 @@ impl Div for Pointer {
         } else {
             Self::from(self.clone_inner() / rhs.clone_inner())
         }
+    }
+}
+
+impl BitAnd for Pointer {
+    type Output = Self;
+
+    fn bitand(self, rhs: Self) -> Self::Output {
+        Self::from(self.clone_inner() & rhs.clone_inner())
+    }
+}
+
+impl BitOr for Pointer {
+    type Output = Self;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Self::from(self.clone_inner() | rhs.clone_inner())
     }
 }
 
