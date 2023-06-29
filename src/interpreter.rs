@@ -72,6 +72,10 @@ impl State {
             let v = Pointer::Const(Rc::new(Value::Boolean(Boolean::Maybe)));
             self.current.insert(String::from(key), v.clone());
             v
+        } else if key == "undefined" {
+            let v = Pointer::Const(Rc::new(Value::Undefined));
+            self.current.insert(String::from(key), v.clone());
+            v
         } else {
             let v = Pointer::Const(Rc::new(Value::String(String::from(key))));
             self.current.insert(String::from(key), v.clone());
@@ -100,6 +104,18 @@ pub fn interpret(src: &Syntax) -> SResult<Pointer> {
 
 fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> {
     match src {
+        Syntax::Debug(content, level) => {
+            if *level >= 3 {
+                println!("{content:?}");
+            }
+            let evaluated = inner_interpret(content, state)?;
+            if *level >= 2 {
+                println!("{evaluated:?}");
+            } else {
+                println!("{evaluated}");
+            }
+            Ok(evaluated)
+        }
         Syntax::Operation(lhs, op, rhs) => {
             let lhs_eval = inner_interpret(lhs, state.clone())?;
             let rhs_eval = inner_interpret(rhs, state)?;

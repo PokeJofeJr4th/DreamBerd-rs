@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    fmt::Display,
     hash::Hash,
     ops::{Add, Div, Mul, Sub},
 };
@@ -11,6 +12,16 @@ pub enum Boolean {
     True,
     False,
     Maybe,
+}
+
+impl Display for Boolean {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::True => write!(f, "true"),
+            Self::False => write!(f, "false"),
+            Self::Maybe => write!(f, "maybe"),
+        }
+    }
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -25,6 +36,20 @@ pub enum Value {
 }
 
 impl Eq for Value {}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Boolean(b) => write!(f, "{b}"),
+            Self::String(str) => write!(f, "{str}"),
+            Self::Number(num) => write!(f, "{num}"),
+            Self::Object(obj) => todo!(),
+            Self::Function(func, args) => todo!(),
+            Self::Keyword(kw) => write!(f, "{kw}"),
+            Self::Undefined => write!(f, "undefined"),
+        }
+    }
+}
 
 impl Hash for Value {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
@@ -129,4 +154,16 @@ pub enum Keyword {
     Delete,
     Function,
     If,
+}
+
+impl Display for Keyword {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Const => write!(f, "const"),
+            Self::Var => write!(f, "var"),
+            Self::Delete => write!(f, "delete"),
+            Self::Function => write!(f, "function"),
+            Self::If => write!(f, "if"),
+        }
+    }
 }

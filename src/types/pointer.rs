@@ -1,4 +1,5 @@
 use core::hash::Hash;
+use std::fmt::Display;
 use std::{
     cell::RefCell,
     ops::{Add, Div, Mul, Sub},
@@ -11,6 +12,15 @@ use super::Value;
 pub enum Pointer {
     Const(Rc<Value>),
     Var(Rc<RefCell<Value>>),
+}
+
+impl Display for Pointer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Const(val) => write!(f, "{val}"),
+            Self::Var(val) => write!(f, "{}", val.borrow()),
+        }
+    }
 }
 
 impl Hash for Pointer {

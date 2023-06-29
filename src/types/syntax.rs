@@ -6,6 +6,7 @@ pub enum Syntax {
     Ident(String),
     String(String),
     Block(Vec<Syntax>),
+    Debug(Box<Syntax>, u8),
 }
 
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]

@@ -51,8 +51,11 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
                         ))
                     }
                 };
-                consume_bang(tokens);
-                Ok(Syntax::Declare(var_type, varname, Box::new(value)))
+                Ok(Syntax::Declare(
+                    var_type,
+                    varname,
+                    Box::new(consume_bang(value, tokens)),
+                ))
             } else {
                 match tokens.peek() {
                     Some(Token::LParen) => {
@@ -72,8 +75,7 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
                                 _ => args_buf.push(parse_group(tokens)?),
                             }
                         }
-                        consume_bang(tokens);
-                        Ok(Syntax::Function(id, args_buf))
+                        Ok(consume_bang(Syntax::Function(id, args_buf), tokens))
                     }
                     // get the value of the variable
                     _ => Ok(Syntax::Ident(id)),
@@ -149,8 +151,16 @@ fn consume_whitespace<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) {
     }
 }
 
-fn consume_bang<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) {
-    while let Some(Token::Bang(_)) = tokens.peek() {
-        tokens.next();
+fn consume_bang<T: Iterator<Item = Token>>(syn: Syntax, tokens: &mut Peekable<T>) -> Syntax {
+    match tokens.peek() {
+        Some(Token::Bang(_)) => {
+            tokens.next();
+            syn
+        }
+        Some(&Token::Question(q)) => {
+            tokens.next();
+            Syntax::Debug(Box::new(syn), q)
+        }
+        _ => syn,
     }
 }

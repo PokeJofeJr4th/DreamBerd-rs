@@ -45,6 +45,17 @@ macro_rules! lex_string {
     }};
 }
 
+macro_rules! count_char {
+    ($chars:ident $tok:expr => $var:ident) => {{
+        let mut count = 1;
+        while $chars.peek() == Some(&$tok) {
+            $chars.next();
+            count += 1;
+        }
+        Token::$var(count)
+    }};
+}
+
 fn inner_tokenize<T: Iterator<Item = char>>(chars: &mut Peekable<T>) -> SResult<Option<Token>> {
     let Some(char) = chars.next() else {
         return Err(String::from("Unexpected end of file"))
@@ -60,7 +71,6 @@ fn inner_tokenize<T: Iterator<Item = char>>(chars: &mut Peekable<T>) -> SResult<
         ':' => Token::Colon,
         '.' => Token::Dot,
         ',' => Token::Comma,
-        '?' => Token::Question,
         '+' => multi_character_pattern!(chars Token::Plus; {'=' => Token::PlusEq}),
         '-' => multi_character_pattern!(chars Token::Tack; {'=' => Token::TackEq}),
         '*' => multi_character_pattern!(chars Token::Star; {'=' => Token::StarEq}),
@@ -68,22 +78,9 @@ fn inner_tokenize<T: Iterator<Item = char>>(chars: &mut Peekable<T>) -> SResult<
         '"' => lex_string!(chars '"'),
         '\'' => lex_string!(chars '\''),
         '`' => lex_string!(chars '`'),
-        '=' => {
-            let mut eq_count = 1;
-            while chars.peek() == Some(&'=') {
-                chars.next();
-                eq_count += 1;
-            }
-            Token::Equal(eq_count)
-        }
-        '!' => {
-            let mut bang_count = 1;
-            while chars.peek() == Some(&'!') {
-                chars.next();
-                bang_count += 1;
-            }
-            Token::Bang(bang_count)
-        }
+        '=' => count_char!(chars '=' => Equal),
+        '!' => count_char!(chars '!' => Bang),
+        '?' => count_char!(chars '?' => Question),
         _ => {
             if char.is_whitespace() {
                 let mut whitespace_count = 1;
