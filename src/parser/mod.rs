@@ -51,10 +51,9 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
                         ))
                     }
                 };
-                Ok(Syntax::Declare(
-                    var_type,
-                    varname,
-                    Box::new(consume_bang(value, tokens)),
+                Ok(consume_bang(
+                    Syntax::Declare(var_type, varname, Box::new(value)),
+                    tokens,
                 ))
             } else {
                 match tokens.peek() {
