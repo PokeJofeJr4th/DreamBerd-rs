@@ -7,6 +7,8 @@ use clap::Parser;
 mod interpreter;
 mod lexer;
 mod parser;
+#[cfg(test)]
+mod tests;
 mod types;
 
 #[derive(Parser)]
@@ -23,5 +25,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("{tokens:?}");
     let parsed = parser::parse(tokens)?;
     println!("{parsed:?}");
+    let result = interpreter::interpret(&parsed)?;
+    println!("{result:?}");
     Ok(())
 }

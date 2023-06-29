@@ -76,7 +76,7 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
                         Ok(Syntax::Function(id, args_buf))
                     }
                     // get the value of the variable
-                    _ => Ok(Syntax::Function(id, Vec::new())),
+                    _ => Ok(Syntax::Ident(id)),
                 }
             }
         }

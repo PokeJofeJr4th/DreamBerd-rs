@@ -67,6 +67,7 @@ fn inner_tokenize<T: Iterator<Item = char>>(chars: &mut Peekable<T>) -> SResult<
         '/' => multi_character_pattern!(chars Token::Slash; {'=' => Token::SlashEq}),
         '"' => lex_string!(chars '"'),
         '\'' => lex_string!(chars '\''),
+        '`' => lex_string!(chars '`'),
         '=' => {
             let mut eq_count = 1;
             while chars.peek() == Some(&'=') {
