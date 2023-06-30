@@ -14,6 +14,8 @@ pub enum Token {
     StarEq,
     Slash,
     SlashEq,
+    Percent,
+    PercentEq,
     LParen,
     RParen,
     LSquirrely,

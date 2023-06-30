@@ -2,7 +2,7 @@ use std::{
     collections::BTreeMap,
     fmt::Display,
     hash::Hash,
-    ops::{Add, BitAnd, BitOr, Div, Mul, Neg, Sub},
+    ops::{Add, BitAnd, BitOr, Div, Mul, Neg, Rem, Sub},
 };
 
 use super::{Pointer, Syntax};
@@ -45,6 +45,14 @@ pub enum Value {
     Undefined,
 }
 
+impl Eq for Value {}
+
+impl Default for Value {
+    fn default() -> Self {
+        Self::Undefined
+    }
+}
+
 impl PartialOrd for Value {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         todo!()
@@ -56,8 +64,6 @@ impl Ord for Value {
         todo!()
     }
 }
-
-impl Eq for Value {}
 
 impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -104,7 +110,6 @@ impl Add for Value {
     fn add(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Self::Number(lhs), Self::Number(rhs)) => Self::Number(lhs + rhs),
-            (Self::String(lhs), Self::String(rhs)) => Self::String(lhs + &rhs),
             (Self::Boolean(bool), Self::Number(num)) | (Self::Number(num), Self::Boolean(bool)) => {
                 Self::Number(
                     match bool {
@@ -114,6 +119,7 @@ impl Add for Value {
                     } + num,
                 )
             }
+            (Self::String(lhs), rhs) => Self::String(lhs + &format!("{rhs}")),
             _ => Self::Undefined,
         }
     }
@@ -164,6 +170,22 @@ impl Div for Value {
                     Self::Undefined
                 } else {
                     Self::Number(lhs / rhs)
+                }
+            }
+            _ => Self::Undefined,
+        }
+    }
+}
+
+impl Rem for Value {
+    type Output = Self;
+    fn rem(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Self::Number(lhs), Self::Number(rhs)) => {
+                if rhs == 0.0 {
+                    Self::Undefined
+                } else {
+                    Self::Number(lhs % rhs)
                 }
             }
             _ => Self::Undefined,

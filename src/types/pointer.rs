@@ -1,6 +1,6 @@
 use core::hash::Hash;
 use std::fmt::Display;
-use std::ops::{AddAssign, BitAnd, BitOr, DivAssign, MulAssign, Neg, SubAssign};
+use std::ops::{AddAssign, BitAnd, BitOr, DivAssign, MulAssign, Neg, Rem, RemAssign, SubAssign};
 use std::{
     cell::RefCell,
     ops::{Add, Div, Mul, Sub},
@@ -209,11 +209,7 @@ impl Div for Pointer {
     type Output = Self;
 
     fn div(self, rhs: Self) -> Self::Output {
-        if rhs == Value::Number(0.0) {
-            Self::from(Value::Undefined)
-        } else {
-            Self::from(self.clone_inner() / rhs.clone_inner())
-        }
+        Self::from(self.clone_inner() / rhs.clone_inner())
     }
 }
 
@@ -230,6 +226,23 @@ impl Neg for Pointer {
     type Output = Self;
     fn neg(self) -> Self::Output {
         Self::from(-self.clone_inner())
+    }
+}
+
+impl Rem for Pointer {
+    type Output = Self;
+
+    fn rem(self, rhs: Self) -> Self::Output {
+        Self::from(self.clone_inner() % rhs.clone_inner())
+    }
+}
+
+impl RemAssign for Pointer {
+    fn rem_assign(&mut self, rhs: Self) {
+        let (Self::ConstVar(val) | Self::VarVar(val)) = self else {
+            return
+        };
+        *val.borrow_mut() = val.borrow().clone() % rhs.clone_inner();
     }
 }
 

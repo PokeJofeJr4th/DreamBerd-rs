@@ -16,7 +16,7 @@ pub fn parse(tokens: Vec<Token>) -> SResult<Syntax> {
 fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<Syntax> {
     match tokens.next() {
         Some(Token::String(str)) => Ok(Syntax::String(str)),
-        Some(Token::Tack) => Ok(Syntax::Negate(Box::new(inner_parse(tokens)?))),
+        Some(Token::Tack | Token::Semicolon) => Ok(Syntax::Negate(Box::new(inner_parse(tokens)?))),
         Some(Token::Ident(id)) => {
             consume_whitespace(tokens);
             if id == "const" || id == "var" {
@@ -124,6 +124,8 @@ fn parse_group<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
             Some(Token::StarEq) => Operation::MulEq,
             Some(Token::Slash) => Operation::Div,
             Some(Token::SlashEq) => Operation::DivEq,
+            Some(Token::Percent) => Operation::Mod,
+            Some(Token::PercentEq) => Operation::ModEq,
             Some(Token::Dot) => Operation::Dot,
             Some(Token::And) => Operation::And,
             Some(Token::Or) => Operation::Or,

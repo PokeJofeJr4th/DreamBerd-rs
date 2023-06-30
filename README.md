@@ -10,6 +10,17 @@ Every statement ends with an exclamation mark! If you're feeling extra, you can 
 
 If you're unsure, that's okay too! You can also use question marks? This will print debug information to the console? The more question marks, the more detailed the information?
 
+## Negation
+
+You might be wondering what DreamBerd uses for its negation operator, since most languages use `!`. Don't worry! `;` and `-` both negate the value in front of them.
+
+```
+;"hello there"? // "ereht olleh"
+-true? // false
+;1 // -1
+-1 // -1
+```
+
 ## Declarations
 
 There are four types of declarations. Constant constants can't be changed at all.
@@ -22,6 +33,7 @@ Constant variables can be edited but not reassigned.
 
 ```
 const var age = 1!
+age += 1!
 // implementation under construction
 ```
 
@@ -36,6 +48,7 @@ Variable variables can be reassigned and edited.
 
 ```
 var var count = 0!
+count += 1!
 // implementation under construction
 ```
 
@@ -53,7 +66,9 @@ This includes numbers, and other language constructs.
 
 ```
 const const 5 = 4!
+const const true = false!
 2 + 2 === 5? // true
+true === false? // true
 ```
 
 ## Booleans
@@ -79,11 +94,12 @@ DreamBerd has significant whitespace. Use spacing to specify the order of arithm
 1+2 * 3? //9
 ```
 
-You can add strings together and multiply them by floats.
+You can add strings together and multiply them by numbers.
 
 ```
 "he" + "l"*2 "o" + " " + "world"? // "hello world"
 "johnny"*1.5? // "johnnyjoh"
+"no lemon " + -"no lemon"? // "no lemon nomel on"
 ```
 
 ### Dividing by Zero

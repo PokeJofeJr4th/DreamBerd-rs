@@ -30,6 +30,8 @@ pub enum Operation {
     MulEq,
     Div,
     DivEq,
+    Mod,
+    ModEq,
     Dot,
     And,
     Or,

@@ -131,6 +131,7 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
                 Operation::Sub => Ok(lhs_eval - rhs_eval),
                 Operation::Mul => Ok(lhs_eval * rhs_eval),
                 Operation::Div => Ok(lhs_eval / rhs_eval),
+                Operation::Mod => Ok(lhs_eval % rhs_eval),
                 Operation::Dot => Ok(lhs_eval.dot(rhs_eval.clone_inner())?),
                 Operation::And => Ok(lhs_eval & rhs_eval),
                 Operation::Or => Ok(lhs_eval | rhs_eval),
@@ -148,6 +149,10 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
                 }
                 Operation::DivEq => {
                     lhs_eval /= rhs_eval;
+                    Ok(lhs_eval)
+                }
+                Operation::ModEq => {
+                    lhs_eval %= rhs_eval;
                     Ok(lhs_eval)
                 }
                 _ => todo!(),
@@ -224,6 +229,18 @@ fn interpret_function(func: &str, args: &[Syntax], state: Rc<RefCell<State>>) ->
                 .borrow_mut()
                 .insert(name.clone(), Pointer::from(inner_val));
             Value::Undefined
+        }
+        Value::Function(fn_args, body) => {
+            let mut inner_state = State::from_parent(state.clone());
+            for (idx, ident) in fn_args.into_iter().enumerate() {
+                let arg_eval = if let Some(syn) = args.get(idx) {
+                    inner_interpret(syn, state.clone())?
+                } else {
+                    Pointer::from(Value::Undefined)
+                };
+                inner_state.insert(ident, arg_eval);
+            }
+            inner_interpret(&body, Rc::new(RefCell::new(inner_state)))?.clone_inner()
         }
 
         other => return Err(format!("`{other:?}` is not a function")),

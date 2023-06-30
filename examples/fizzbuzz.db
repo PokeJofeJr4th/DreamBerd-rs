@@ -1,0 +1,13 @@
+const var idx = 0!
+
+fn(loop, (), {
+    idx += 1!
+    var var msg = ""!
+    if(idx%3 == 0, {msg += "fizz"!})!
+    if(idx%5 == 0, {msg += "buzz"!})!
+    if(msg==="",{msg += idx!})!
+    msg?
+    loop()!
+})!
+
+loop()!
