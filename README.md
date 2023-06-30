@@ -67,8 +67,8 @@ This includes numbers, and other language constructs.
 ```
 const const 5 = 4!
 const const true = false!
-2 + 2 === 5? // true
-true === false? // true
+2 + 2 ==== 5? // true
+true ==== false? // true
 ```
 
 ## Booleans
@@ -114,19 +114,19 @@ Dividing by zero returns undefined.
 
 JavaScript lets you do different levels of comparison. `==` for loose comparison, and `===` for a more precise check. DreamBerd takes this to another level.
 
-You can use `==` to do a loose check.
+You can use `===` to do a loose check.
 
 ```
 3.14 == "3.14"? //true
 ```
 
-You can use `===` to do a more precise check.
+You can use `====` to do a more precise check.
 
 ```
 3.14 === "3.14"? //false
 ```
 
-You can use `====` to be EVEN MORE precise!
+You can use `=====` to be EVEN MORE precise!
 
 ```
 const const pi = 3.14!
@@ -135,7 +135,7 @@ pi ==== pi? //true
 3.14 ==== pi? //false
 ```
 
-Finally, if you want to be much less precise, you can use `=`.
+Finally, if you want to be much less precise, you can use `==`.
 
 ```
 3 = 3.14? //true
@@ -154,13 +154,18 @@ functi(power, (a, b), (a ** b))!
 union(inverse, (a), (1/a))!
 ```
 
+Alternatively, you can use the arrow syntax
+```
+const const does_she_really_like_you = () -> maybe!
+```
+
 ## Delete
 
 To avoid confusion, the delete statement only works with identifiers like variables, numbers, strings, and booleans.
 
 ```
 delete(3)!
-2+1 == 3? // false
+2+1 === 3? // false
 ```
 
 DreamBerd is a multi-paradigm programming language, which means that you can delete the keywords and paradigms you don't like.

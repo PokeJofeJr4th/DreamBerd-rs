@@ -69,3 +69,11 @@ fn op_assign() {
         Ok(Value::String(String::from("i did  did i")))
     );
 }
+
+#[test]
+fn function() {
+    assert_eq!(
+        eval("const const does_she_really_like_you = () -> maybe! does_she_really_like_you"),
+        Ok(Value::Function(Vec::new(), Syntax::Ident("maybe".into())))
+    );
+}

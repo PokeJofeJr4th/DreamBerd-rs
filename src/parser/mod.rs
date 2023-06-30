@@ -44,7 +44,7 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
                     Some(Token::Bang(_)) => Syntax::Ident(String::new()),
                     Some(Token::Equal(1)) => {
                         consume_whitespace(tokens);
-                        inner_parse(tokens)?
+                        parse_group(tokens)?
                     }
                     other => {
                         return Err(format!(
@@ -62,7 +62,7 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
                         tokens.next();
                         consume_whitespace(tokens);
                         let input = get_tuple(tokens)?;
-                        Ok(consume_bang(Syntax::Function(id, input), tokens))
+                        Ok(consume_bang(Syntax::Call(id, input), tokens))
                     }
                     // get the value of the variable
                     _ => Ok(Syntax::Ident(id)),
@@ -129,6 +129,7 @@ fn parse_group<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
             Some(Token::Dot) => Operation::Dot,
             Some(Token::And) => Operation::And,
             Some(Token::Or) => Operation::Or,
+            Some(Token::Arrow) => Operation::Arrow,
             _ => {
                 tail = left;
                 break;
@@ -140,7 +141,7 @@ fn parse_group<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
         }
         groups_buf.push((left, op, spc));
     }
-    Ok(grouping::group(groups_buf, tail))
+    grouping::group(groups_buf, tail)
 }
 
 fn consume_whitespace<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) {

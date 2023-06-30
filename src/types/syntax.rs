@@ -1,7 +1,8 @@
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]
 pub enum Syntax {
     Declare(VarType, String, Box<Syntax>),
-    Function(String, Vec<Syntax>),
+    Function(Vec<String>, Box<Syntax>),
+    Call(String, Vec<Syntax>),
     Operation(Box<Syntax>, Operation, Box<Syntax>),
     Ident(String),
     String(String),
@@ -35,4 +36,5 @@ pub enum Operation {
     Dot,
     And,
     Or,
+    Arrow,
 }

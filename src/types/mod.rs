@@ -12,4 +12,5 @@ pub mod prelude {
     pub use super::value::{Boolean, Keyword, Value};
 
     pub type SResult<T> = Result<T, String>;
+    pub type OpGroup = (Syntax, Operation, u8);
 }

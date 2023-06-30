@@ -155,7 +155,7 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
                     lhs_eval %= rhs_eval;
                     Ok(lhs_eval)
                 }
-                _ => todo!(),
+                Operation::Arrow => todo!(),
             }
         }
         Syntax::Block(statements) => {
@@ -183,8 +183,11 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
             Ok(Pointer::from(Value::Undefined))
         }
         Syntax::String(str) => Ok(Pointer::from(str.as_ref())),
-        Syntax::Function(func, args) => interpret_function(func, args, state),
+        Syntax::Call(func, args) => interpret_function(func, args, state),
         Syntax::Ident(ident) => Ok(state.borrow_mut().get(ident)),
+        Syntax::Function(args, body) => {
+            Ok(Pointer::from(Value::Function(args.clone(), *body.clone())))
+        }
     }
 }
 
