@@ -1,4 +1,19 @@
-const var x = use(4)!
+const const use = (val) -> {
+    var var obj = {}!
+    obj.call = (val)->{
+        var var ret = self.value!
+        if(; val ==== undefined, {self.value = val!})!
+        ret
+    }!
+    obj.value = val!
+    obj
+}!
+
+"use was defined"?
+
+var var x = use(4)!
+
+"x is " + x?
 
 x(10)!
 

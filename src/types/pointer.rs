@@ -94,7 +94,6 @@ impl Pointer {
     /// Apply the dot operator. This has two valid cases: float parsing and object indexing. Otherwise, it returns `undefined`
     #[allow(clippy::option_if_let_else, clippy::single_match_else)]
     pub fn dot(&self, rhs: Value) -> SResult<Self> {
-        // can we return a mutable internal reference?
         let allow_modify = matches!(self, Self::ConstVar(_) | Self::VarVar(_));
         let lhs = self.clone_inner();
         match (lhs, rhs) {
@@ -115,15 +114,14 @@ impl Pointer {
                     Ok(val)
                 }
             },
-            // TODO: Include the case for an object
             _ => Ok(Self::from(Value::Undefined)),
         }
     }
 
     pub fn assign(&self, rhs: &Self) -> SResult<()> {
         match self {
-            Self::ConstConst(_) => Err(String::from("Can't assign to a `const const`")),
-            Self::ConstVar(_) => Err(String::from("Can't assign to a `const var`")),
+            Self::ConstConst(_) => Err(format!("Can't assign to a `const const` {self:?}")),
+            Self::ConstVar(_) => Err(format!("Can't assign to a `const var` {self:?}")),
             Self::VarConst(ptr) => {
                 ptr.replace(rhs.as_const());
                 Ok(())

@@ -26,6 +26,9 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
         }
         Syntax::Operation(lhs, op, rhs) => {
             let mut lhs_eval = inner_interpret(lhs, state.clone())?;
+            if let (Operation::Dot, Syntax::Ident(ident)) = (op, &**rhs) {
+                return lhs_eval.dot(Value::from(ident.as_ref()));
+            };
             let rhs_eval = inner_interpret(rhs, state)?;
             // println!("{lhs:?} op {rhs:?}");
             // println!("{lhs_eval:?} op {rhs_eval:?}");
@@ -40,7 +43,7 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
                 Operation::Mul => Ok(lhs_eval * rhs_eval),
                 Operation::Div => Ok(lhs_eval / rhs_eval),
                 Operation::Mod => Ok(lhs_eval % rhs_eval),
-                Operation::Dot => Ok(lhs_eval.dot(rhs_eval.clone_inner())?),
+                Operation::Dot => lhs_eval.dot(rhs_eval.clone_inner()),
                 Operation::And => Ok(lhs_eval & rhs_eval),
                 Operation::Or => Ok(lhs_eval | rhs_eval),
                 Operation::AddEq => {
@@ -172,7 +175,9 @@ fn interpret_function(func: Value, args: &[Syntax], state: Rc<RefCell<State>>) -
             let Some(call) = obj.get(&"call".into()) else {
                 return Err(format!("`Object({obj:?})` is not a function"))
             };
-            interpret_function(call.clone_inner(), args, state)
+            let mut new_state = State::from_parent(state);
+            new_state.insert("self".into(), call.clone());
+            interpret_function(call.clone_inner(), args, Rc::new(RefCell::new(new_state)))
         }
         Value::Function(fn_args, body) => {
             let mut inner_state = State::from_parent(state.clone());

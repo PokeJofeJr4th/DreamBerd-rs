@@ -4,7 +4,7 @@ use lazy_regex::regex;
 
 use crate::types::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct State {
     current: HashMap<String, Pointer>,
     parent: Option<Rc<RefCell<State>>>,
