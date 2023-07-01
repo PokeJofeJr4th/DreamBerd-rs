@@ -126,7 +126,11 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
             // println!("{lhs:?} op {rhs:?}");
             // println!("{lhs_eval:?} op {rhs_eval:?}");
             match op {
-                Operation::Equal(precision) => Ok(lhs_eval.eq(&rhs_eval, *precision)),
+                Operation::Equal(1) => {
+                    lhs_eval.assign(&rhs_eval)?;
+                    Ok(rhs_eval)
+                }
+                Operation::Equal(precision) => Ok(lhs_eval.eq(&rhs_eval, *precision - 1)),
                 Operation::Add => Ok(lhs_eval + rhs_eval),
                 Operation::Sub => Ok(lhs_eval - rhs_eval),
                 Operation::Mul => Ok(lhs_eval * rhs_eval),
@@ -155,6 +159,10 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
                     lhs_eval %= rhs_eval;
                     Ok(lhs_eval)
                 }
+                Operation::Ls => Ok(Pointer::from(lhs_eval < rhs_eval)),
+                Operation::LsEq => Ok(Pointer::from(lhs_eval <= rhs_eval)),
+                Operation::Gr => Ok(Pointer::from(lhs_eval > rhs_eval)),
+                Operation::GrEq => Ok(Pointer::from(lhs_eval >= rhs_eval)),
                 Operation::Arrow => todo!(),
             }
         }

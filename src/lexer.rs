@@ -80,6 +80,8 @@ fn inner_tokenize<T: Iterator<Item = char>>(chars: &mut Peekable<T>) -> SResult<
         '*' => multi_character_pattern!(chars Token::Star; {'=' => Token::StarEq}),
         '/' => multi_character_pattern!(chars Token::Slash; {'=' => Token::SlashEq}),
         '%' => multi_character_pattern!(chars Token::Percent; {'=' => Token::PercentEq}),
+        '<' => multi_character_pattern!(chars Token::LCaret; {'=' => Token::LCaretEq}),
+        '>' => multi_character_pattern!(chars Token::RCaret; {'=' => Token::RCaretEq}),
         '"' => lex_string!(chars '"'),
         '\'' => lex_string!(chars '\''),
         '`' => lex_string!(chars '`'),

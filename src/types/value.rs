@@ -55,7 +55,10 @@ impl Default for Value {
 
 impl PartialOrd for Value {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        todo!()
+        match (self, other) {
+            (Self::Number(lhs), Self::Number(rhs)) => lhs.partial_cmp(rhs),
+            _ => todo!(),
+        }
     }
 }
 

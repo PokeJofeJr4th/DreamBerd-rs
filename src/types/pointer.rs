@@ -1,4 +1,5 @@
 use core::hash::Hash;
+use std::cmp::Ordering;
 use std::fmt::Display;
 use std::ops::{AddAssign, BitAnd, BitOr, DivAssign, MulAssign, Neg, Rem, RemAssign, SubAssign};
 use std::{
@@ -142,6 +143,37 @@ impl Pointer {
             _ => Ok(Self::from(Value::Undefined)),
         }
     }
+
+    pub fn assign(&mut self, rhs: &Self) -> SResult<()> {
+        match self {
+            Self::ConstConst(_) => Err(String::from("Can't assign to a `const const`")),
+            Self::ConstVar(_) => Err(String::from("Can't assign to a `const var`")),
+            Self::VarConst(ptr) => {
+                *ptr = rhs.as_const();
+                Ok(())
+            }
+            Self::VarVar(ptr) => {
+                *ptr = rhs.as_var();
+                Ok(())
+            }
+        }
+    }
+
+    pub fn as_const(&self) -> Rc<Value> {
+        match self {
+            Self::ConstConst(val) | Self::VarConst(val) => val.clone(),
+            Self::ConstVar(val) | Self::VarVar(val) => Rc::new(val.borrow().clone()),
+        }
+    }
+
+    pub fn as_var(&self) -> Rc<RefCell<Value>> {
+        match self {
+            Self::ConstConst(val) | Self::VarConst(val) => {
+                Rc::new(RefCell::new(val.as_ref().clone()))
+            }
+            Self::ConstVar(val) | Self::VarVar(val) => val.clone(),
+        }
+    }
 }
 
 impl PartialEq<Value> for Pointer {
@@ -150,6 +182,12 @@ impl PartialEq<Value> for Pointer {
             Self::ConstConst(val) | Self::VarConst(val) => &**val == other,
             Self::VarVar(val) | Self::ConstVar(val) => &*val.borrow() == other,
         }
+    }
+}
+
+impl PartialOrd for Pointer {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.clone_inner().partial_cmp(&other.clone_inner())
     }
 }
 

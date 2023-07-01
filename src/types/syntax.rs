@@ -37,4 +37,8 @@ pub enum Operation {
     And,
     Or,
     Arrow,
+    Ls,
+    LsEq,
+    Gr,
+    GrEq,
 }

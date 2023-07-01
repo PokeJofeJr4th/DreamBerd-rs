@@ -44,7 +44,7 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
                     Some(Token::Bang(_)) => Syntax::Ident(String::new()),
                     Some(Token::Equal(1)) => {
                         consume_whitespace(tokens);
-                        parse_group(tokens)?
+                        grouping::parse_group::<T>(tokens)?
                     }
                     other => {
                         return Err(format!(
@@ -80,7 +80,7 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
                     }
                     _ => {}
                 }
-                let inner = parse_group(tokens)?;
+                let inner = grouping::parse_group::<T>(tokens)?;
                 statements_buf.push(consume_bang(inner, tokens));
             }
             if tokens.next() == Some(Token::RSquirrely) {
@@ -101,47 +101,6 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
         Some(other) => Err(format!("Unexpected token `{other:?}`")),
         None => Err(String::from("Unexpected End of File")),
     }
-}
-
-fn parse_group<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<Syntax> {
-    let mut groups_buf = Vec::new();
-    let tail;
-    loop {
-        let left = inner_parse(tokens)?;
-        let mut spc = if let Some(&Token::Space(spc)) = tokens.peek() {
-            tokens.next();
-            spc
-        } else {
-            0
-        };
-        let op = match tokens.peek() {
-            Some(&Token::Equal(eq)) => Operation::Equal(eq),
-            Some(Token::Plus) => Operation::Add,
-            Some(Token::PlusEq) => Operation::AddEq,
-            Some(Token::Tack) => Operation::Sub,
-            Some(Token::TackEq) => Operation::SubEq,
-            Some(Token::Star) => Operation::Mul,
-            Some(Token::StarEq) => Operation::MulEq,
-            Some(Token::Slash) => Operation::Div,
-            Some(Token::SlashEq) => Operation::DivEq,
-            Some(Token::Percent) => Operation::Mod,
-            Some(Token::PercentEq) => Operation::ModEq,
-            Some(Token::Dot) => Operation::Dot,
-            Some(Token::And) => Operation::And,
-            Some(Token::Or) => Operation::Or,
-            Some(Token::Arrow) => Operation::Arrow,
-            _ => {
-                tail = left;
-                break;
-            }
-        };
-        tokens.next();
-        if let Some(&Token::Space(spc_right)) = tokens.peek() {
-            spc += spc_right;
-        }
-        groups_buf.push((left, op, spc));
-    }
-    grouping::group(groups_buf, tail)
 }
 
 fn consume_whitespace<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) {
@@ -176,7 +135,7 @@ fn get_tuple<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<Vec
                 tokens.next();
                 break;
             }
-            _ => args_buf.push(parse_group(tokens)?),
+            _ => args_buf.push(grouping::parse_group::<T>(tokens)?),
         }
     }
     Ok(args_buf)
