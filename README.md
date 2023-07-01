@@ -117,28 +117,28 @@ JavaScript lets you do different levels of comparison. `==` for loose comparison
 You can use `===` to do a loose check.
 
 ```
-3.14 == "3.14"? //true
+3.14 === "3.14"? // true
 ```
 
 You can use `====` to do a more precise check.
 
 ```
-3.14 === "3.14"? //false
+3.14 ==== "3.14"? // false
 ```
 
 You can use `=====` to be EVEN MORE precise!
 
 ```
 const const pi = 3.14!
-pi ==== pi? //true
-3.14 ==== 3.14? //false (this differs from the official DreamBerd specification)
-3.14 ==== pi? //false
+pi ===== pi? // true
+3.14 ===== 3.14? // false (this differs from the official DreamBerd specification)
+3.14 ===== pi? // false
 ```
 
 Finally, if you want to be much less precise, you can use `==`.
 
 ```
-3 = 3.14? //true
+3 == 3.14? // true
 ```
 
 ## Functions
@@ -155,6 +155,7 @@ union(inverse, (a), (1/a))!
 ```
 
 Alternatively, you can use the arrow syntax
+
 ```
 const const does_she_really_like_you = () -> maybe!
 ```

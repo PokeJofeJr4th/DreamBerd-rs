@@ -47,11 +47,11 @@ fn maybe_or_and() {
 
 #[test]
 fn comparisons() {
-    assert_eq!(eval("`true` == true"), Ok(Value::from(true)));
-    assert_eq!(eval("`true` === true"), Ok(Value::from(false)));
-    assert_eq!(eval("`false` == true"), Ok(Value::from(false)));
-    assert_eq!(eval("` TRUE\n\t ` = true"), Ok(Value::from(true)));
-    assert_eq!(eval("` TRUE ` == true"), Ok(Value::from(false)));
+    assert_eq!(eval("`true` === true"), Ok(Value::from(true)));
+    assert_eq!(eval("`true` ==== true"), Ok(Value::from(false)));
+    assert_eq!(eval("`false` === true"), Ok(Value::from(false)));
+    assert_eq!(eval("` TRUE\n\t ` == true"), Ok(Value::from(true)));
+    assert_eq!(eval("` TRUE ` === true"), Ok(Value::from(false)));
 }
 
 #[test]
