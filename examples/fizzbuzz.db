@@ -1,15 +1,12 @@
 const const loop🤫 = (idx, dur) -> {
     var var msg = ""!
-    if(idx % 3  ===  0, {msg += "fizz"!})!
-    if(idx % 5  ===  0, {msg += "buzz"!})!
-    if(msg === "", {
-        "setting msg to idx"?
-        msg???
-        idx???
+    if(idx % 3  ====  0, {msg += "fizz"!})!
+    if(idx % 5  ====  0, {msg += "buzz"!})!
+    if(msg ==== "", {
         msg = idx!
     })!
-    msg??
+    msg?
     if(idx < dur, loop🤫(idx + 1, dur))!
 }!
 
-loop🤫(1, 10)!
+loop🤫(1, 20)!

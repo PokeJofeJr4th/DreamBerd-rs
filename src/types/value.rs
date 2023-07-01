@@ -301,6 +301,7 @@ pub enum Keyword {
     Function,
     If,
     Use,
+    UseInner,
 }
 
 impl Display for Keyword {
@@ -312,6 +313,7 @@ impl Display for Keyword {
             Self::Function => write!(f, "function"),
             Self::If => write!(f, "if"),
             Self::Use => write!(f, "use"),
+            Self::UseInner => write!(f, "use(inner)"),
         }
     }
 }

@@ -25,35 +25,35 @@ macro_rules! multi_character_pattern {
     };
 }
 
-macro_rules! lex_string {
-    ($chars:ident $end:expr) => {{
-        let mut string_buf = String::new();
-        while let Some(next) = $chars.next() {
-            if next == $end {
-                break;
-            }
-            string_buf.push(next);
-            if next == '\\' {
-                string_buf.push(
-                    $chars
-                        .next()
-                        .ok_or_else(|| String::from("Unexpected end of file"))?,
-                );
-            }
+fn lex_string<T: Iterator<Item = char>>(chars: &mut Peekable<T>, end: char) -> SResult<Token> {
+    let mut string_buf = String::new();
+    while let Some(next) = chars.next() {
+        if next == end {
+            break;
         }
-        Token::String(string_buf)
-    }};
+        string_buf.push(next);
+        if next == '\\' {
+            string_buf.push(
+                chars
+                    .next()
+                    .ok_or_else(|| String::from("Unexpected end of file"))?,
+            );
+        }
+    }
+    Ok(Token::String(string_buf))
 }
 
-macro_rules! count_char {
-    ($chars:ident $tok:expr => $var:ident) => {{
-        let mut count = 1;
-        while $chars.peek() == Some(&$tok) {
-            $chars.next();
-            count += 1;
-        }
-        Token::$var(count)
-    }};
+fn count_char<T: Iterator<Item = char>, F: Fn(u8) -> Token>(
+    chars: &mut Peekable<T>,
+    tok: char,
+    typ: F,
+) -> Token {
+    let mut count = 1;
+    while chars.peek() == Some(&tok) {
+        chars.next();
+        count += 1;
+    }
+    typ(count)
 }
 
 fn inner_tokenize<T: Iterator<Item = char>>(chars: &mut Peekable<T>) -> SResult<Option<Token>> {
@@ -82,12 +82,12 @@ fn inner_tokenize<T: Iterator<Item = char>>(chars: &mut Peekable<T>) -> SResult<
         '%' => multi_character_pattern!(chars Token::Percent; {'=' => Token::PercentEq}),
         '<' => multi_character_pattern!(chars Token::LCaret; {'=' => Token::LCaretEq}),
         '>' => multi_character_pattern!(chars Token::RCaret; {'=' => Token::RCaretEq}),
-        '"' => lex_string!(chars '"'),
-        '\'' => lex_string!(chars '\''),
-        '`' => lex_string!(chars '`'),
-        '=' => count_char!(chars '=' => Equal),
-        '!' => count_char!(chars '!' => Bang),
-        '?' => count_char!(chars '?' => Question),
+        '"' => lex_string(chars, '"')?,
+        '\'' => lex_string(chars, '\'')?,
+        '`' => lex_string(chars, '`')?,
+        '=' => count_char(chars, '=', Token::Equal),
+        '!' => count_char(chars, '!', Token::Bang),
+        '?' => count_char(chars, '?', Token::Question),
         _ => {
             if char.is_whitespace() {
                 let mut whitespace_count = 1;

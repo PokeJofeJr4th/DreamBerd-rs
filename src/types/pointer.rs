@@ -16,15 +16,17 @@ use super::{SResult, Value, VarType};
 pub enum Pointer {
     ConstConst(Rc<Value>),
     ConstVar(Rc<RefCell<Value>>),
-    VarConst(Rc<Value>),
-    VarVar(Rc<RefCell<Value>>),
+    VarConst(Rc<RefCell<Rc<Value>>>),
+    VarVar(Rc<RefCell<Rc<RefCell<Value>>>>),
 }
 
 impl Display for Pointer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::ConstConst(val) | Self::VarConst(val) => write!(f, "{val}"),
-            Self::ConstVar(val) | Self::VarVar(val) => write!(f, "{}", val.borrow()),
+            Self::ConstConst(val) => write!(f, "{val}"),
+            Self::VarConst(val) => write!(f, "{}", val.borrow()),
+            Self::ConstVar(val) => write!(f, "{}", val.borrow()),
+            Self::VarVar(val) => write!(f, "{}", val.borrow().borrow()),
         }
     }
 }
@@ -33,8 +35,10 @@ impl Hash for Pointer {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         core::mem::discriminant(self).hash(state);
         match self {
-            Self::ConstConst(val) | Self::VarConst(val) => val.hash(state),
-            Self::ConstVar(var) | Self::VarVar(var) => var.borrow().hash(state),
+            Self::ConstConst(val) => val.hash(state),
+            Self::VarConst(val) => val.borrow().hash(state),
+            Self::ConstVar(var) => var.borrow().hash(state),
+            Self::VarVar(var) => var.borrow().borrow().hash(state),
         }
     }
 }
@@ -43,45 +47,20 @@ impl Pointer {
     /// Get the value inside the pointer. This is not a deep clone and should be treated as a reference
     pub fn clone_inner(&self) -> Value {
         match self {
-            Self::ConstConst(val) | Self::VarConst(val) => (**val).clone(),
-            Self::VarVar(val) | Self::ConstVar(val) => (**val).borrow().clone(),
+            Self::ConstConst(val) => (**val).clone(),
+            Self::VarConst(val) => (**val.borrow()).clone(),
+            Self::VarVar(val) => (*val).borrow().borrow().clone(),
+            Self::ConstVar(val) => (**val).borrow().clone(),
         }
     }
 
     /// Convert this poiner to a different type. Performs a shallow clone if switching between `const` and `var`
     pub fn convert(&self, vt: VarType) -> Self {
-        match (self, vt) {
-            (
-                Self::ConstConst(val) | Self::VarConst(val),
-                VarType::ConstConst | VarType::VarConst,
-            ) => {
-                if vt == VarType::ConstConst {
-                    Self::ConstConst(val.clone())
-                } else {
-                    Self::VarConst(val.clone())
-                }
-            }
-            (Self::ConstVar(val) | Self::VarVar(val), VarType::ConstVar | VarType::VarVar) => {
-                if vt == VarType::VarVar {
-                    Self::VarVar(val.clone())
-                } else {
-                    Self::ConstVar(val.clone())
-                }
-            }
-            (Self::ConstConst(val) | Self::VarConst(val), VarType::ConstVar | VarType::VarVar) => {
-                if vt == VarType::ConstVar {
-                    Self::ConstVar(Rc::new(RefCell::new((**val).clone())))
-                } else {
-                    Self::VarVar(Rc::new(RefCell::new((**val).clone())))
-                }
-            }
-            (Self::VarVar(val) | Self::ConstVar(val), VarType::ConstConst | VarType::VarConst) => {
-                if vt == VarType::ConstConst {
-                    Self::ConstConst(Rc::new(val.borrow().clone()))
-                } else {
-                    Self::VarConst(Rc::new(val.borrow().clone()))
-                }
-            }
+        match vt {
+            VarType::ConstConst => Self::ConstConst(self.as_const()),
+            VarType::ConstVar => Self::ConstVar(self.as_var()),
+            VarType::VarConst => Self::VarConst(Rc::new(RefCell::new(self.as_const()))),
+            VarType::VarVar => Self::VarVar(Rc::new(RefCell::new(self.as_var()))),
         }
     }
 
@@ -95,18 +74,15 @@ impl Pointer {
         if precision >= 4 {
             Self::from(match (self, rhs) {
                 (
-                    Self::ConstConst(lhs) | Self::VarConst(lhs),
-                    Self::ConstConst(rhs) | Self::VarConst(rhs),
+                    Self::ConstConst(_) | Self::VarConst(_),
+                    Self::ConstConst(_) | Self::VarConst(_),
                 ) => unsafe {
-                    core::mem::transmute::<Rc<_>, u64>(lhs.clone())
-                        == core::mem::transmute::<Rc<_>, u64>(rhs.clone())
+                    core::mem::transmute::<Rc<_>, u64>(self.as_const())
+                        == core::mem::transmute::<Rc<_>, u64>(rhs.as_const())
                 },
-                (
-                    Self::ConstVar(lhs) | Self::VarVar(lhs),
-                    Self::ConstVar(rhs) | Self::VarVar(rhs),
-                ) => unsafe {
-                    core::mem::transmute::<Rc<_>, u64>(lhs.clone())
-                        == core::mem::transmute::<Rc<_>, u64>(rhs.clone())
+                (Self::ConstVar(_) | Self::VarVar(_), Self::ConstVar(_) | Self::VarVar(_)) => unsafe {
+                    core::mem::transmute::<Rc<_>, u64>(self.as_var())
+                        == core::mem::transmute::<Rc<_>, u64>(rhs.as_var())
                 },
                 _ => false,
             })
@@ -144,16 +120,18 @@ impl Pointer {
         }
     }
 
-    pub fn assign(&mut self, rhs: &Self) -> SResult<()> {
+    pub fn assign(&self, rhs: &Self) -> SResult<()> {
         match self {
             Self::ConstConst(_) => Err(String::from("Can't assign to a `const const`")),
             Self::ConstVar(_) => Err(String::from("Can't assign to a `const var`")),
             Self::VarConst(ptr) => {
-                *ptr = rhs.as_const();
+                ptr.replace(rhs.as_const());
                 Ok(())
             }
             Self::VarVar(ptr) => {
-                *ptr = rhs.as_var();
+                // println!("{self:?} => {rhs:?}");
+                ptr.replace(rhs.as_var());
+                // println!("{self:?}");
                 Ok(())
             }
         }
@@ -161,27 +139,26 @@ impl Pointer {
 
     pub fn as_const(&self) -> Rc<Value> {
         match self {
-            Self::ConstConst(val) | Self::VarConst(val) => val.clone(),
-            Self::ConstVar(val) | Self::VarVar(val) => Rc::new(val.borrow().clone()),
+            Self::ConstConst(val) => val.clone(),
+            Self::VarConst(val) => val.borrow().clone(),
+            Self::ConstVar(val) => Rc::new(val.borrow().clone()),
+            Self::VarVar(val) => Rc::new(val.borrow().borrow().clone()),
         }
     }
 
     pub fn as_var(&self) -> Rc<RefCell<Value>> {
         match self {
-            Self::ConstConst(val) | Self::VarConst(val) => {
-                Rc::new(RefCell::new(val.as_ref().clone()))
-            }
-            Self::ConstVar(val) | Self::VarVar(val) => val.clone(),
+            Self::ConstConst(val) => Rc::new(RefCell::new(val.as_ref().clone())),
+            Self::VarConst(val) => Rc::new(RefCell::new(val.borrow().as_ref().clone())),
+            Self::ConstVar(val) => val.clone(),
+            Self::VarVar(val) => val.borrow().clone(),
         }
     }
 }
 
 impl PartialEq<Value> for Pointer {
     fn eq(&self, other: &Value) -> bool {
-        match self {
-            Self::ConstConst(val) | Self::VarConst(val) => &**val == other,
-            Self::VarVar(val) | Self::ConstVar(val) => &*val.borrow() == other,
-        }
+        *self.as_const() == other.clone()
     }
 }
 
@@ -201,11 +178,16 @@ impl Add for Pointer {
 
 impl AddAssign for Pointer {
     fn add_assign(&mut self, rhs: Self) {
-        let (Self::ConstVar(val) | Self::VarVar(val)) = self else {
-            return
+        let output = self.clone_inner() + rhs.clone_inner();
+        match self {
+            Self::ConstVar(val) => {
+                val.replace(output);
+            }
+            Self::VarVar(val) => {
+                val.borrow().replace(output);
+            }
+            _ => {}
         };
-        let value = val.borrow().clone() + rhs.clone_inner();
-        *val.borrow_mut() = value;
     }
 }
 
@@ -219,10 +201,16 @@ impl Sub for Pointer {
 
 impl SubAssign for Pointer {
     fn sub_assign(&mut self, rhs: Self) {
-        let (Self::ConstVar(val) | Self::VarVar(val)) = self else {
-            return
+        let output = self.clone_inner() - rhs.clone_inner();
+        match self {
+            Self::ConstVar(val) => {
+                val.replace(output);
+            }
+            Self::VarVar(val) => {
+                val.borrow().replace(output);
+            }
+            _ => {}
         };
-        *val.borrow_mut() = val.borrow().clone() - rhs.clone_inner();
     }
 }
 
@@ -236,10 +224,16 @@ impl Mul for Pointer {
 
 impl MulAssign for Pointer {
     fn mul_assign(&mut self, rhs: Self) {
-        let (Self::ConstVar(val) | Self::VarVar(val)) = self else {
-            return
+        let output = self.clone_inner() * rhs.clone_inner();
+        match self {
+            Self::ConstVar(val) => {
+                val.replace(output);
+            }
+            Self::VarVar(val) => {
+                val.borrow().replace(output);
+            }
+            _ => {}
         };
-        *val.borrow_mut() = val.borrow().clone() * rhs.clone_inner();
     }
 }
 
@@ -253,10 +247,16 @@ impl Div for Pointer {
 
 impl DivAssign for Pointer {
     fn div_assign(&mut self, rhs: Self) {
-        let (Self::ConstVar(val) | Self::VarVar(val)) = self else {
-            return
+        let output = self.clone_inner() / rhs.clone_inner();
+        match self {
+            Self::ConstVar(val) => {
+                val.replace(output);
+            }
+            Self::VarVar(val) => {
+                val.borrow().replace(output);
+            }
+            _ => {}
         };
-        *val.borrow_mut() = val.borrow().clone() / rhs.clone_inner();
     }
 }
 
@@ -277,10 +277,7 @@ impl Rem for Pointer {
 
 impl RemAssign for Pointer {
     fn rem_assign(&mut self, rhs: Self) {
-        let (Self::ConstVar(val) | Self::VarVar(val)) = self else {
-            return
-        };
-        *val.borrow_mut() = val.borrow().clone() % rhs.clone_inner();
+        let _ = self.assign(&(self.clone() % rhs));
     }
 }
 

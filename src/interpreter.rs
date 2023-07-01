@@ -1,110 +1,6 @@
-use std::{
-    cell::RefCell,
-    collections::{BTreeMap, HashMap},
-    rc::Rc,
-};
-
-use lazy_regex::regex;
+use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
 use crate::types::prelude::*;
-
-#[derive(Debug)]
-struct State {
-    current: HashMap<String, Pointer>,
-    parent: Option<Rc<RefCell<State>>>,
-}
-
-impl State {
-    pub fn new() -> Self {
-        Self {
-            current: HashMap::new(),
-            parent: None,
-        }
-    }
-
-    pub fn from_parent(parent: Rc<RefCell<Self>>) -> Self {
-        Self {
-            current: HashMap::new(),
-            parent: Some(parent),
-        }
-    }
-
-    pub fn get(&mut self, key: &str) -> Pointer {
-        // println!("{:?}: {key}", self.current);
-        // if there's a value here, get it
-        if let Some(val) = self.current.get(key) {
-            return val.clone();
-        }
-        // if there's a value in the parent, get it
-        if let Some(parent) = &self.parent {
-            return (**parent).borrow_mut().get(key);
-        }
-        // otherwise, parse it in global context
-        if let Ok(val) = key.parse() {
-            let new_val = Pointer::ConstConst(Rc::new(Value::Number(val)));
-            self.current.insert(String::from(key), new_val.clone());
-            new_val
-        } else if regex!("^f?u?n?c?t?i?o?n?$").is_match(key) {
-            let v = Pointer::ConstConst(Rc::new(Value::Keyword(Keyword::Function)));
-            self.current.insert(String::from(key), v.clone());
-            v
-        } else if key == "delete" {
-            let v = Pointer::ConstConst(Rc::new(Value::Keyword(Keyword::Delete)));
-            self.current.insert(String::from(key), v.clone());
-            v
-        } else if key == "const" {
-            let v = Pointer::ConstConst(Rc::new(Value::Keyword(Keyword::Const)));
-            self.current.insert(String::from(key), v.clone());
-            v
-        } else if key == "var" {
-            let v = Pointer::ConstConst(Rc::new(Value::Keyword(Keyword::Var)));
-            self.current.insert(String::from(key), v.clone());
-            v
-        } else if key == "if" {
-            let v = Pointer::ConstConst(Rc::new(Value::Keyword(Keyword::If)));
-            self.current.insert(String::from(key), v.clone());
-            v
-        } else if key == "use" {
-            let v = Pointer::ConstConst(Rc::new(Value::Keyword(Keyword::Use)));
-            self.current.insert(String::from(key), v.clone());
-            v
-        } else if key == "true" {
-            let v = Pointer::ConstConst(Rc::new(Value::from(true)));
-            self.current.insert(String::from(key), v.clone());
-            v
-        } else if key == "false" {
-            let v = Pointer::ConstConst(Rc::new(Value::from(false)));
-            self.current.insert(String::from(key), v.clone());
-            v
-        } else if key == "maybe" {
-            let v = Pointer::ConstConst(Rc::new(Value::Boolean(Boolean::Maybe)));
-            self.current.insert(String::from(key), v.clone());
-            v
-        } else if key == "undefined" {
-            let v = Pointer::ConstConst(Rc::new(Value::Undefined));
-            self.current.insert(String::from(key), v.clone());
-            v
-        } else {
-            let v = Pointer::ConstConst(Rc::new(Value::String(String::from(key))));
-            self.current.insert(String::from(key), v.clone());
-            v
-        }
-    }
-
-    pub fn insert(&mut self, k: String, v: Pointer) {
-        self.current.insert(k, v);
-    }
-
-    pub fn delete(&mut self, k: &str) {
-        if self.current.contains_key(k) {
-            self.current
-                .insert(String::from(k), Pointer::from(Value::Undefined));
-        }
-        if let Some(parent) = &self.parent {
-            parent.borrow_mut().delete(k);
-        }
-    }
-}
 
 pub fn interpret(src: &Syntax) -> SResult<Pointer> {
     inner_interpret(src, Rc::new(RefCell::new(State::new())))
@@ -199,7 +95,10 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
             Ok(Pointer::from(Value::Undefined))
         }
         Syntax::String(str) => Ok(Pointer::from(str.as_ref())),
-        Syntax::Call(func, args) => interpret_function(func, args, state),
+        Syntax::Call(func, args) => {
+            let func = state.borrow_mut().get(func).clone_inner();
+            interpret_function(func, args, state)
+        }
         Syntax::Ident(ident) => Ok(state.borrow_mut().get(ident)),
         Syntax::Function(args, body) => {
             Ok(Pointer::from(Value::Function(args.clone(), *body.clone())))
@@ -207,10 +106,8 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
     }
 }
 
-fn interpret_function(func: &str, args: &[Syntax], state: Rc<RefCell<State>>) -> SResult<Pointer> {
-    let func = state.borrow_mut().get(func).clone_inner();
-    // println!("{state:#?}");
-    let result = match func {
+fn interpret_function(func: Value, args: &[Syntax], state: Rc<RefCell<State>>) -> SResult<Pointer> {
+    match func {
         Value::Keyword(Keyword::If) => {
             let [condition, body] = args else {
                     return Err(String::from("If statement requires two arguments: condition and body"))
@@ -218,15 +115,16 @@ fn interpret_function(func: &str, args: &[Syntax], state: Rc<RefCell<State>>) ->
             let condition_evaluated = inner_interpret(condition, state.clone())?;
             // println!("{condition_evaluated:?}");
             if condition_evaluated == Value::from(true) {
-                return inner_interpret(body, state);
+                inner_interpret(body, state)
+            } else {
+                Ok(Value::Undefined.into())
             }
-            Value::Undefined
         }
         Value::Keyword(Keyword::Delete) => {
             if let [Syntax::Ident(key)] = args {
                 state.borrow_mut().delete(key);
             }
-            Value::Undefined
+            Ok(Value::Undefined.into())
         }
         Value::Keyword(Keyword::Function) => {
             let [Syntax::Ident(name), args, body] = args else {
@@ -247,14 +145,34 @@ fn interpret_function(func: &str, args: &[Syntax], state: Rc<RefCell<State>>) ->
             state
                 .borrow_mut()
                 .insert(name.clone(), Pointer::from(inner_val));
-            Value::Undefined
+            Ok(Value::Undefined.into())
         }
         Value::Keyword(Keyword::Use) => {
             let [value] = args else {
                 return Err(String::from("Invalid arguments for `use`; expected value"))
             };
             let evaluated = inner_interpret(value, state)?;
-            Value::Object(BTreeMap::from([("value".into(), evaluated)]))
+            Ok(Value::Object(BTreeMap::from([
+                ("value".into(), evaluated),
+                ("call".into(), Value::Keyword(Keyword::UseInner).into()),
+            ]))
+            .into())
+        }
+        Value::Keyword(Keyword::UseInner) => {
+            if args.is_empty() {
+                Ok(state.borrow_mut().get("value"))
+            } else if let [value] = args {
+                // set the value
+                todo!()
+            } else {
+                Err(format!("A hook takes 0 or 1 arguments; got `{args:?}`"))
+            }
+        }
+        Value::Object(obj) => {
+            let Some(call) = obj.get(&"call".into()) else {
+                return Err(format!("`Object({obj:?})` is not a function"))
+            };
+            interpret_function(call.clone_inner(), args, state)
         }
         Value::Function(fn_args, body) => {
             let mut inner_state = State::from_parent(state.clone());
@@ -266,10 +184,9 @@ fn interpret_function(func: &str, args: &[Syntax], state: Rc<RefCell<State>>) ->
                 };
                 inner_state.insert(ident, arg_eval);
             }
-            inner_interpret(&body, Rc::new(RefCell::new(inner_state)))?.clone_inner()
+            inner_interpret(&body, Rc::new(RefCell::new(inner_state)))
         }
 
-        other => return Err(format!("`{other:?}` is not a function")),
-    };
-    Ok(Pointer::from(result))
+        other => Err(format!("`{other:?}` is not a function")),
+    }
 }
