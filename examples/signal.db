@@ -1,0 +1,7 @@
+const var x = use(4)!
+
+x(10)!
+
+x()?
+
+x.value?

@@ -1,4 +1,8 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::{BTreeMap, HashMap},
+    rc::Rc,
+};
 
 use lazy_regex::regex;
 
@@ -58,6 +62,10 @@ impl State {
             v
         } else if key == "if" {
             let v = Pointer::ConstConst(Rc::new(Value::Keyword(Keyword::If)));
+            self.current.insert(String::from(key), v.clone());
+            v
+        } else if key == "use" {
+            let v = Pointer::ConstConst(Rc::new(Value::Keyword(Keyword::Use)));
             self.current.insert(String::from(key), v.clone());
             v
         } else if key == "true" {
@@ -222,7 +230,7 @@ fn interpret_function(func: &str, args: &[Syntax], state: Rc<RefCell<State>>) ->
         }
         Value::Keyword(Keyword::Function) => {
             let [Syntax::Ident(name), args, body] = args else {
-                    return Err(format!("Invalid arguments for `Function`: `{args:?}`"))
+                    return Err(format!("Invalid arguments for `function`: `{args:?}`; expected name, args, and body"))
                 };
             let args = match args {
                 Syntax::Block(args) => args.clone(),
@@ -240,6 +248,13 @@ fn interpret_function(func: &str, args: &[Syntax], state: Rc<RefCell<State>>) ->
                 .borrow_mut()
                 .insert(name.clone(), Pointer::from(inner_val));
             Value::Undefined
+        }
+        Value::Keyword(Keyword::Use) => {
+            let [value] = args else {
+                return Err(String::from("Invalid arguments for `use`; expected value"))
+            };
+            let evaluated = inner_interpret(value, state)?;
+            Value::Object(BTreeMap::from([("value".into(), evaluated)]))
         }
         Value::Function(fn_args, body) => {
             let mut inner_state = State::from_parent(state.clone());

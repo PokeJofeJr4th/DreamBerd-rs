@@ -287,6 +287,12 @@ impl From<f64> for Value {
     }
 }
 
+impl From<&str> for Value {
+    fn from(value: &str) -> Self {
+        Self::String(String::from(value))
+    }
+}
+
 #[derive(PartialEq, Eq, Debug, Hash, Clone, Copy)]
 pub enum Keyword {
     Const,
@@ -294,6 +300,7 @@ pub enum Keyword {
     Delete,
     Function,
     If,
+    Use,
 }
 
 impl Display for Keyword {
@@ -304,6 +311,7 @@ impl Display for Keyword {
             Self::Delete => write!(f, "delete"),
             Self::Function => write!(f, "function"),
             Self::If => write!(f, "if"),
+            Self::Use => write!(f, "use"),
         }
     }
 }

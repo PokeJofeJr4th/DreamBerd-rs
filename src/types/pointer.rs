@@ -48,7 +48,7 @@ impl Pointer {
         }
     }
 
-    /// Convert this poiner to a different type. Performs a deep clone if switching between `const` and `var`
+    /// Convert this poiner to a different type. Performs a shallow clone if switching between `const` and `var`
     pub fn convert(&self, vt: VarType) -> Self {
         match (self, vt) {
             (
