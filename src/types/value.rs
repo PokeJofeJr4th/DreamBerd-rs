@@ -282,6 +282,14 @@ impl Value {
                     Boolean::True
                 }
             }
+            Self::Object(obj) => {
+                if obj.is_empty() {
+                    Boolean::False
+                } else {
+                    Boolean::True
+                }
+            }
+            Self::Undefined => Boolean::False,
             _ => Boolean::Maybe,
         }
     }
