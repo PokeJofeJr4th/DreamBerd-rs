@@ -75,15 +75,15 @@ impl Pointer {
         }
     }
 
-    /// Make a new pointer from a value with a given type
-    pub fn from_value(val: Value, vt: VarType) -> Self {
-        match vt {
-            VarType::ConstConst => Self::ConstConst(Rc::new(val)),
-            VarType::ConstVar => Self::ConstVar(Rc::new(RefCell::new(val))),
-            VarType::VarConst => Self::VarConst(Rc::new(RefCell::new(Rc::new(val)))),
-            VarType::VarVar => Self::VarVar(Rc::new(RefCell::new(Rc::new(RefCell::new(val))))),
-        }
-    }
+    // /// Make a new pointer from a value with a given type
+    // pub fn from_value(val: Value, vt: VarType) -> Self {
+    //     match vt {
+    //         VarType::ConstConst => Self::ConstConst(Rc::new(val)),
+    //         VarType::ConstVar => Self::ConstVar(Rc::new(RefCell::new(val))),
+    //         VarType::VarConst => Self::VarConst(Rc::new(RefCell::new(Rc::new(val)))),
+    //         VarType::VarVar => Self::VarVar(Rc::new(RefCell::new(Rc::new(RefCell::new(val))))),
+    //     }
+    // }
 
     /// check equality with a given precision. Returns a `const const` pointer to a boolean
     ///

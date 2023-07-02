@@ -25,7 +25,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // println!("{tokens:?}");
     let parsed = parser::parse(tokens)?;
     // println!("{parsed:?}");
-    let result = interpreter::interpret(&parsed)?;
+    let _result = interpreter::interpret(&parsed)?;
     // println!("{result:?}");
     Ok(())
 }

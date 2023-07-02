@@ -1,4 +1,4 @@
-const const loop🤫: Function = (idx, dur) -> {
+const const loop🤫: Function = (idx: i32, dur: i32) -> {
     var var msg: String = ""!
     if(idx % 3  ====  0, {
         msg += "fizz"!

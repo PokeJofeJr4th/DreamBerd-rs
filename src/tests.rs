@@ -106,4 +106,23 @@ fn doc_tests() {
     assert_eq_db!("`he` + `l`*2 + `o ` + ;`dlrow`", "`hello world`");
     assert_eq_db!("`johnny` * 1.5", "`johnnyjoh`");
     assert_eq_db!("`no lemon ` + -`no lemon`", "`no lemon nomel on`");
+
+    eval(
+        "const const use = (val) -> {
+    var var obj = {}!
+    obj.call = (val)->{
+        var var ret = self.value!
+        if(;(val====undefined),
+            self.value=val
+        )!
+        ret}!
+    obj.value = val!
+    obj
+}!
+
+const const print = (txt) -> {txt?}!
+
+",
+    )
+    .unwrap();
 }

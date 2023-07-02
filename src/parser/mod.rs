@@ -20,59 +20,21 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
         Some(Token::Ident(id)) => {
             consume_whitespace(tokens);
             if id == "const" || id == "var" {
-                let Some(Token::Ident(second)) = tokens.next() else {
-                    return Err(String::from("Expected `const` or `var` after `{id}`"))
-                };
-                let var_type = match (id.as_ref(), second.as_ref()) {
-                    ("var", "var") => VarType::VarVar,
-                    ("var", "const") => VarType::VarConst,
-                    ("const", "var") => VarType::ConstVar,
-                    ("const", "const") => VarType::ConstConst,
-                    ("var" | "const", _) => {
-                        return Err(format!(
-                            "Expected `const` or `var` after `{id}`, not `{second}`"
-                        ))
-                    }
-                    _ => unreachable!(),
-                };
-                consume_whitespace(tokens);
-                let Some(Token::Ident(varname)) = tokens.next() else {
-                    return Err(format!("Expected a variable name after `{id} {second}`"))
-                };
-                consume_whitespace(tokens);
-                // consume a type definition
-                if tokens.peek() == Some(&Token::Colon) {
-                    tokens.next();
-                    consume_whitespace(tokens);
-                    match tokens.next() {
-                        Some(Token::Ident(_)) => {}
-                        other => return Err(format!("Expected a type after `:`, got `{other:?}`")),
-                    }
-                    consume_whitespace(tokens);
-                }
-                let value = match tokens.next() {
-                    Some(Token::Bang(_)) => Syntax::Ident(String::new()),
-                    Some(Token::Equal(1)) => {
-                        consume_whitespace(tokens);
-                        grouping::parse_group::<T>(tokens)?
-                    }
-                    other => {
-                        return Err(format!(
-                            "Expected `!`, `:`, or `=` after variable name, got `{other:?}`"
-                        ))
-                    }
-                };
-                Ok(consume_bang(
-                    Syntax::Declare(var_type, varname, Box::new(value)),
-                    tokens,
-                ))
+                declare(tokens, &id)
             } else {
                 match tokens.peek() {
+                    // call as a function
                     Some(Token::LParen) => {
                         tokens.next();
                         consume_whitespace(tokens);
                         let input = get_tuple(tokens)?;
                         Ok(consume_bang(Syntax::Call(id, input), tokens))
+                    }
+                    Some(Token::Colon) => {
+                        tokens.next();
+                        consume_whitespace(tokens);
+                        get_type(tokens)?;
+                        Ok(Syntax::Ident(id))
                     }
                     // get the value of the variable
                     _ => Ok(Syntax::Ident(id)),
@@ -133,6 +95,52 @@ fn consume_bang<T: Iterator<Item = Token>>(syn: Syntax, tokens: &mut Peekable<T>
     }
 }
 
+fn declare<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>, id: &str) -> SResult<Syntax> {
+    let Some(Token::Ident(second)) = tokens.next() else {
+                    return Err(String::from("Expected `const` or `var` after `{id}`"))
+                };
+    let var_type = match (id, second.as_ref()) {
+        ("var", "var") => VarType::VarVar,
+        ("var", "const") => VarType::VarConst,
+        ("const", "var") => VarType::ConstVar,
+        ("const", "const") => VarType::ConstConst,
+        ("var" | "const", _) => {
+            return Err(format!(
+                "Expected `const` or `var` after `{id}`, not `{second}`"
+            ))
+        }
+        _ => unreachable!(),
+    };
+    consume_whitespace(tokens);
+    let Some(Token::Ident(varname)) = tokens.next() else {
+                    return Err(format!("Expected a variable name after `{id} {second}`"))
+                };
+    consume_whitespace(tokens);
+    // consume a type definition
+    if tokens.peek() == Some(&Token::Colon) {
+        tokens.next();
+        consume_whitespace(tokens);
+        get_type(tokens)?;
+        consume_whitespace(tokens);
+    }
+    let value = match tokens.next() {
+        Some(Token::Bang(_)) => Syntax::Ident(String::new()),
+        Some(Token::Equal(1)) => {
+            consume_whitespace(tokens);
+            grouping::parse_group::<T>(tokens)?
+        }
+        other => {
+            return Err(format!(
+                "Expected `!`, `:`, or `=` after variable name, got `{other:?}`"
+            ))
+        }
+    };
+    Ok(consume_bang(
+        Syntax::Declare(var_type, varname, Box::new(value)),
+        tokens,
+    ))
+}
+
 fn get_tuple<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<Vec<Syntax>> {
     let mut args_buf = Vec::new();
     while let Some(tok) = tokens.peek() {
@@ -149,4 +157,34 @@ fn get_tuple<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<Vec
         }
     }
     Ok(args_buf)
+}
+
+fn get_type<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<()> {
+    match tokens.next() {
+        Some(Token::Ident(_)) => {}
+        other => return Err(format!("Expected a type after `:`; got `{other:?}`")),
+    }
+    consume_whitespace(tokens);
+    match tokens.peek() {
+        Some(Token::LSquare) => {
+            tokens.next();
+            let Some(Token::RSquare) = tokens.next() else {
+                return Err(String::from("Expected `]` after `[` in type definition"))
+            };
+        }
+        Some(Token::LCaret) => {
+            tokens.next();
+            get_type(tokens)?;
+            while tokens.peek() == Some(&Token::Comma) {
+                tokens.next();
+                get_type(tokens)?;
+                consume_whitespace(tokens);
+            }
+            let Some(Token::RCaret) = tokens.next() else {
+                return Err(String::from("Missing `>` in type definition"))
+            };
+        }
+        _ => {}
+    }
+    Ok(())
 }

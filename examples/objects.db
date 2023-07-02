@@ -1,8 +1,8 @@
 const var my_object = {}!
 
-my_object.name = "Samuel"!
+my_object.name: str = "Samuel"!
 
-my_object.call = ()->{
+my_object.call: Fn<_> = ()->{
     "Hello! My name is " + self.name?
 }!
 

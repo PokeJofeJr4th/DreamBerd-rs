@@ -67,11 +67,15 @@ count = 2!
 
 ### Types
 
-DreamBerd is a weakly-typed language. However, type annotations can be added to declarations.
+DreamBerd is a weakly-typed language. However, type annotations can be added to declarations and functions.
 
 ```java
 var const name: String = "Gary"!
 const var age: i32 = 22!
+
+const const mul: Fn<i32, i32> = (lhs: i32, rhs: i32)->{
+    lhs * rhs
+}!
 ```
 
 > ##### Technical Info
@@ -265,18 +269,18 @@ score()? // Get the value (and print it)
 Dreamberd has a fast-growing standard library. Due to the limitations of the file system, it must be copied and pasted into every file that uses it.
 
 ```java
-const const use = (v) -> {
+const const use: Fn<T> = (v: T) -> {
     var var o = {}!
-    o.call = (v)->{
-        var var r = self.value!
+    o.call = (v: T)->{
+        var var r: T = self.value!
         if(;(v====undefined),
             self.value=v
         )!
         r
     }!
-    o.value = v!
+    o.value: T = v!
     o
 }!
 
-const const print = (t) -> {t?}!
+const const print = (t: String) -> {t?}!
 ```

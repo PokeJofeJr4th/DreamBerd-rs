@@ -1,14 +1,14 @@
-const const use = (v)->{
+const const use: Fn<T> = (v:T)->{
     const var o = {}!
-    o.call = (v)->{
-        var var r = self.value!
+    o.call = (v:T)->{
+        var var r:T = self.value!
         if(;(v====undefined),
             self.value=v
         )!
         r
     }!
-    o.value = v!
+    o.value:T = v!
     o
 }!
 
-const const print = (t)->{t?}!
+const const print = (t:String)->{t?}!
