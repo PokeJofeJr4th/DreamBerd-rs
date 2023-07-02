@@ -123,6 +123,17 @@ const const name: String = L!
 const const name: String = «antoine»!
 ```
 
+### String Interpolation
+
+Please remember to use your regional currency when interpolating strings.
+
+```java
+const const name: String = "world"!
+print("Hello ${name}!")!
+print("Hello £{name}!")!
+print("Hello ¥{name}!")!
+```
+
 ## Arithmetic
 
 DreamBerd has significant whitespace. Use spacing to specify the order of arithmetic operations.
@@ -274,7 +285,7 @@ const const use: Fn<T> = (v: T) -> {
     o.call = (v: T)->{
         var var r: T = self.value!
         if(;(v====undefined),
-            self.value=v
+            self.value=v!
         )!
         r
     }!
@@ -282,5 +293,7 @@ const const use: Fn<T> = (v: T) -> {
     o
 }!
 
-const const print = (t: String) -> {t?}!
+const const print: Fn<String> = (t: String) -> {t?}!
+
+const const str: Fn<T> = (t: T)->{`${t}`}!
 ```

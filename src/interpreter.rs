@@ -49,7 +49,18 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
             // println!("{state:#?}");
             Ok(Pointer::from(Value::Undefined))
         }
-        Syntax::String(str) => Ok(Pointer::from(str.as_ref())),
+        Syntax::String(str) => {
+            let mut string_buf = String::new();
+            for segment in str {
+                match segment {
+                    StringSegment::Ident(ident) => string_buf.push_str(
+                        &inner_interpret(&Syntax::Ident(ident.clone()), state.clone())?.to_string(),
+                    ),
+                    StringSegment::String(str) => string_buf.push_str(str),
+                }
+            }
+            Ok(Pointer::from(string_buf.as_ref()))
+        }
         Syntax::Call(func, args) => {
             let func = state.borrow_mut().get(func);
             interpret_function(&func, args, state)

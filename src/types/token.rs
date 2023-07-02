@@ -1,7 +1,13 @@
+#[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Clone)]
+pub enum StringSegment {
+    String(String),
+    Ident(String),
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum Token {
     Ident(String),
-    String(String),
+    String(Vec<StringSegment>),
     Space(u8),
     Equal(u8),
     Bang(u8),

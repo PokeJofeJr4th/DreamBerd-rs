@@ -26,21 +26,36 @@ macro_rules! multi_character_pattern {
 }
 
 fn lex_string<T: Iterator<Item = char>>(chars: &mut Peekable<T>, end: char) -> SResult<Token> {
+    let mut outer_buf = Vec::new();
     let mut string_buf = String::new();
     while let Some(next) = chars.next() {
         if next == end {
             break;
         }
-        string_buf.push(next);
-        if next == '\\' {
-            string_buf.push(
-                chars
-                    .next()
-                    .ok_or_else(|| String::from("Unexpected end of file"))?,
-            );
+        if matches!(next, '$' | '£' | '¥') && chars.next() == Some('{') {
+            outer_buf.push(StringSegment::String(core::mem::take(&mut string_buf)));
+            for next in chars.by_ref() {
+                if next == '}' {
+                    outer_buf.push(StringSegment::Ident(core::mem::take(&mut string_buf)));
+                    break;
+                }
+                string_buf.push(next);
+            }
+        } else {
+            string_buf.push(next);
+            if next == '\\' {
+                string_buf.push(
+                    chars
+                        .next()
+                        .ok_or_else(|| String::from("Unexpected end of file"))?,
+                );
+            }
         }
     }
-    Ok(Token::String(string_buf))
+    if !string_buf.is_empty() {
+        outer_buf.push(StringSegment::String(string_buf));
+    }
+    Ok(Token::String(outer_buf))
 }
 
 fn count_char<T: Iterator<Item = char>, F: Fn(u8) -> Token>(

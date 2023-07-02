@@ -1,3 +1,5 @@
+use super::StringSegment;
+
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]
 pub enum Syntax {
     Declare(VarType, String, Box<Syntax>),
@@ -5,7 +7,7 @@ pub enum Syntax {
     Call(String, Vec<Syntax>),
     Operation(Box<Syntax>, Operation, Box<Syntax>),
     Ident(String),
-    String(String),
+    String(Vec<StringSegment>),
     Block(Vec<Syntax>),
     Debug(Box<Syntax>, u8),
     Negate(Box<Syntax>),

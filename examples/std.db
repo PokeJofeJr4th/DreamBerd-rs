@@ -11,4 +11,7 @@ const const use: Fn<T> = (v:T)->{
     o
 }!
 
-const const print = (t:String)->{t?}!
+const const print: Fn<String> = (t:String)->{t?}!
+
+const const str: Fn<T> = (t:T)->{`${t}`}!
+

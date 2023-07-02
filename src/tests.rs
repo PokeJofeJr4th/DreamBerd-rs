@@ -13,7 +13,13 @@ fn eval<T: Display>(src: T) -> SResult<Value> {
 
 macro_rules! assert_eq_db {
     ($lhs: expr, $rhs: expr) => {
-        assert_eq!(eval($lhs), eval($rhs))
+        let ltoks = crate::lexer::tokenize(&format!("{{{}}}", $lhs)).unwrap();
+        let rtoks = crate::lexer::tokenize(&format!("{{{}}}", $rhs)).unwrap();
+        let lsyn = crate::parser::parse(ltoks).unwrap();
+        let rsyn = crate::parser::parse(rtoks).unwrap();
+        let lres = crate::interpreter::interpret(&lsyn).unwrap().clone_inner();
+        let rres = crate::interpreter::interpret(&rsyn).unwrap().clone_inner();
+        assert_eq!(lres, rres, "{lsyn:?} != {rsyn:?}")
     };
 }
 
@@ -125,4 +131,9 @@ const const print = (txt) -> {txt?}!
 ",
     )
     .unwrap();
+}
+
+#[test]
+fn string_interpolation() {
+    assert_eq_db!("const const name = `John`! `Hi, I'm ${name}`", "`Hi, I'm John`");
 }
