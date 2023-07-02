@@ -237,6 +237,14 @@ impl Value {
         if precision <= 2 && self.bool() == Boolean::False && rhs.bool() == Boolean::False {
             return Self::from(true);
         }
+        // true == `aaa`
+        if precision == 1 {
+            if let (&Self::Boolean(bool), rhs) | (rhs, &Self::Boolean(bool)) = (self, &rhs) {
+                if rhs.bool() == bool {
+                    return Self::from(true);
+                }
+            }
+        }
         if precision == 2 {
             return Self::from(format!("{self}") == format!("{rhs}"));
         } else if precision == 1

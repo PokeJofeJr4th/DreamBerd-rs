@@ -76,7 +76,13 @@ true ==== false? // true
 
 ## Booleans
 
-Booleans can be `true`, `false`, or `maybe`.
+Booleans can be `true`, `false`, or `maybe`, as current events have shown that reducing complex facts to simple dichotomies can unhelpfully flatten nuance. All values in DreamBerd are thus either truthy, falsey, or maybeyey.
+
+Numbers greater than or equal to one, non-empty strings, non-empty objects, and `true` are truthey.
+
+Numbers less than or equal to zero, empty strings, empty objects, undefined, and `false` are falsey.
+
+Numbers between 0 and 1, numbers that are not a number, keywords, functions, and `maybe` are maybeyey.
 
 ## Strings
 
