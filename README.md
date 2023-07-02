@@ -213,7 +213,7 @@ union(inverse, (a), (1/a))!
 Alternatively, you can use the arrow syntax
 
 ```java
-const const does_she_really_like_you = () -> {maybe}!
+const const does_she_really_like_you = ()->{maybe}!
 ```
 
 ## Delete
