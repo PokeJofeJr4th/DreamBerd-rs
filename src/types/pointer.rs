@@ -65,13 +65,23 @@ impl Pointer {
         }
     }
 
-    /// Convert this poiner to a different type. Performs a shallow clone if switching between `const` and `var`
+    /// Convert this pointer to a different type. Performs a shallow clone if switching between inner `const` and `var`
     pub fn convert(&self, vt: VarType) -> Self {
         match vt {
             VarType::ConstConst => Self::ConstConst(self.as_const()),
             VarType::ConstVar => Self::ConstVar(self.as_var()),
             VarType::VarConst => Self::VarConst(Rc::new(RefCell::new(self.as_const()))),
             VarType::VarVar => Self::VarVar(Rc::new(RefCell::new(self.as_var()))),
+        }
+    }
+
+    /// Make a new pointer from a value with a given type
+    pub fn from_value(val: Value, vt: VarType) -> Self {
+        match vt {
+            VarType::ConstConst => Self::ConstConst(Rc::new(val)),
+            VarType::ConstVar => Self::ConstVar(Rc::new(RefCell::new(val))),
+            VarType::VarConst => Self::VarConst(Rc::new(RefCell::new(Rc::new(val)))),
+            VarType::VarVar => Self::VarVar(Rc::new(RefCell::new(Rc::new(RefCell::new(val))))),
         }
     }
 

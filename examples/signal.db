@@ -1,8 +1,8 @@
 const const use = (val) -> {
     var var obj = {}!
     obj.call = (val)->{
-        var var ret = self.value!
-        if(; val ==== undefined, {self.value = val!})!
+        var var ret = {{"self:"?self??}.value???}!
+        if(; val ==== undefined, {self.value = val! "val isnt undefined"?})!
         ret
     }!
     obj.value = val!

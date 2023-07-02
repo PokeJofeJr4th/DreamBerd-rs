@@ -79,9 +79,9 @@ impl Display for Value {
             Self::String(str) => write!(f, "{str}"),
             Self::Number(num) => write!(f, "{num}"),
             Self::Object(obj) => {
-                let mut map = f.debug_map();
+                let mut map = f.debug_struct("object");
                 for (k, v) in obj {
-                    map.entry(&format!("{k}"), &format!("{v}"));
+                    map.field(&format!("{k}"), &format!("{v}"));
                 }
                 map.finish()
             }
@@ -101,7 +101,14 @@ impl Hash for Value {
             Self::Boolean(bool) => bool.hash(state),
             Self::String(str) => str.hash(state),
             Self::Number(float) => (*float).to_bits().hash(state),
-            Self::Object(obj) => todo!(),
+            Self::Object(obj) => {
+                let mut vec: Vec<_> = obj.iter().collect::<Vec<_>>();
+                vec.sort_by_key(|&(k, _)| k);
+                for (k, v) in vec {
+                    k.hash(state);
+                    v.hash(state);
+                }
+            }
             Self::Function(inputs, content) => {
                 inputs.hash(state);
                 content.hash(state);

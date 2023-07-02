@@ -51,8 +51,8 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
         }
         Syntax::String(str) => Ok(Pointer::from(str.as_ref())),
         Syntax::Call(func, args) => {
-            let func = state.borrow_mut().get(func).clone_inner();
-            interpret_function(func, args, state)
+            let func = state.borrow_mut().get(func);
+            interpret_function(&func, args, state)
         }
         Syntax::Ident(ident) => Ok(state.borrow_mut().get(ident)),
         Syntax::Function(args, body) => {
@@ -128,8 +128,13 @@ fn interpret_operation(
     }
 }
 
-fn interpret_function(func: Value, args: &[Syntax], state: Rc<RefCell<State>>) -> SResult<Pointer> {
-    match func {
+fn interpret_function(
+    func: &Pointer,
+    args: &[Syntax],
+    state: Rc<RefCell<State>>,
+) -> SResult<Pointer> {
+    let func_eval = (*func.as_const()).clone();
+    match func_eval {
         Value::Keyword(Keyword::If) => {
             let [condition, body] = args else {
                     return Err(String::from("If statement requires two arguments: condition and body"))
@@ -180,33 +185,23 @@ fn interpret_function(func: Value, args: &[Syntax], state: Rc<RefCell<State>>) -
             ]))
             .into())
         }
-        Value::Keyword(Keyword::UseInner) => {
-            if args.is_empty() {
-                Ok(state.borrow_mut().get("value"))
-            } else if let [value] = args {
-                // set the value
-                todo!()
-            } else {
-                Err(format!("A hook takes 0 or 1 arguments; got `{args:?}`"))
-            }
-        }
         Value::Object(obj) => {
             let Some(call) = obj.get(&"call".into()) else {
                 return Err(format!("`Object({obj:?})` is not a function"))
             };
             let mut new_state = State::from_parent(state);
-            new_state.insert("self".into(), call.clone());
-            interpret_function(call.clone_inner(), args, Rc::new(RefCell::new(new_state)))
+            new_state.insert("self".into(), func.clone());
+            interpret_function(call, args, Rc::new(RefCell::new(new_state)))
         }
         Value::Function(fn_args, body) => {
             let mut inner_state = State::from_parent(state.clone());
-            for (idx, ident) in fn_args.into_iter().enumerate() {
+            for (idx, ident) in fn_args.iter().enumerate() {
                 let arg_eval = if let Some(syn) = args.get(idx) {
                     inner_interpret(syn, state.clone())?
                 } else {
                     Pointer::from(Value::Undefined)
                 };
-                inner_state.insert(ident, arg_eval);
+                inner_state.insert(ident.clone(), arg_eval);
             }
             inner_interpret(&body, Rc::new(RefCell::new(inner_state)))
         }
