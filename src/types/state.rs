@@ -8,7 +8,7 @@ use core::f64::consts as f64;
 
 #[derive(Debug, PartialEq)]
 pub struct State {
-    current: HashMap<String, Pointer>,
+    current: HashMap<Rc<str>, Pointer>,
     parent: Option<Rc<RefCell<State>>>,
 }
 
@@ -31,6 +31,8 @@ impl State {
         kw!(current "false" => false);
         kw!(current "maybe" => Boolean::Maybe);
         kw!(current "undefined" => Value::Undefined);
+        kw!(current "infinity" => Value::Number(f64::INFINITY));
+        kw!(current "∞" => Value::Number(f64::INFINITY));
         Self {
             current,
             parent: None,
@@ -44,10 +46,10 @@ impl State {
         }
     }
 
-    pub fn get(&mut self, key: &str) -> Pointer {
+    pub fn get(&mut self, key: Rc<str>) -> Pointer {
         // println!("{:?}: {key}", self.current);
         // if there's a value here, get it
-        if let Some(val) = self.current.get(key) {
+        if let Some(val) = self.current.get(&key) {
             return val.clone();
         }
         // if there's a value in the parent, get it
@@ -57,27 +59,27 @@ impl State {
         // otherwise, parse it in global context
         if let Ok(val) = key.parse() {
             let new_val = Pointer::ConstConst(Rc::new(Value::Number(val)));
-            self.current.insert(String::from(key), new_val.clone());
+            self.current.insert(key, new_val.clone());
             new_val
-        } else if regex!("^f?u?n?c?t?i?o?n?$").is_match(key) {
+        } else if regex!("^f?u?n?c?t?i?o?n?$").is_match(&key) {
             let v = Pointer::ConstConst(Rc::new(Value::Keyword(Keyword::Function)));
-            self.current.insert(String::from(key), v.clone());
+            self.current.insert(key, v.clone());
             v
         } else {
-            let v = Pointer::ConstConst(Rc::new(Value::String(String::from(key))));
-            self.current.insert(String::from(key), v.clone());
+            let v = Pointer::ConstConst(Rc::new(Value::String(key.clone())));
+            self.current.insert(key, v.clone());
             v
         }
     }
 
-    pub fn insert(&mut self, k: String, v: Pointer) {
+    pub fn insert(&mut self, k: Rc<str>, v: Pointer) {
         self.current.insert(k, v);
     }
 
-    pub fn delete(&mut self, k: &str) {
-        if self.current.contains_key(k) {
+    pub fn delete(&mut self, k: Rc<str>) {
+        if self.current.contains_key(&k) {
             self.current
-                .insert(String::from(k), Pointer::from(Value::Undefined));
+                .insert(k.clone(), Pointer::from(Value::Undefined));
         }
         if let Some(parent) = &self.parent {
             parent.borrow_mut().delete(k);

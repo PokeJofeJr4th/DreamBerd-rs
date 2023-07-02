@@ -19,7 +19,7 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
         Some(Token::Tack | Token::Semicolon) => Ok(Syntax::Negate(Box::new(inner_parse(tokens)?))),
         Some(Token::Ident(id)) => {
             consume_whitespace(tokens);
-            if id == "const" || id == "var" {
+            if id.as_ref() == "const" || id.as_ref() == "var" {
                 declare(tokens, &id)
             } else {
                 match tokens.peek() {
@@ -124,7 +124,7 @@ fn declare<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>, id: &str) -> SRe
         consume_whitespace(tokens);
     }
     let value = match tokens.next() {
-        Some(Token::Bang(_)) => Syntax::Ident(String::new()),
+        Some(Token::Bang(_)) => Syntax::Ident(String::new().into()),
         Some(Token::Equal(1)) => {
             consume_whitespace(tokens);
             grouping::parse_group::<T>(tokens)?

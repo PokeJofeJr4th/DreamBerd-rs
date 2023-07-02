@@ -62,10 +62,10 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
             Ok(Pointer::from(string_buf.as_ref()))
         }
         Syntax::Call(func, args) => {
-            let func = state.borrow_mut().get(func);
+            let func = state.borrow_mut().get(func.clone());
             interpret_function(&func, args, state)
         }
-        Syntax::Ident(ident) => Ok(state.borrow_mut().get(ident)),
+        Syntax::Ident(ident) => Ok(state.borrow_mut().get(ident.clone())),
         Syntax::Function(args, body) => {
             Ok(Pointer::from(Value::Function(args.clone(), *body.clone())))
         }
@@ -84,7 +84,7 @@ fn interpret_operation(
     {
         let inner_var = lhs_eval.as_var();
         let Value::Object(ref mut obj) = *inner_var.borrow_mut() else { panic!("Internal Compiler Error at {}:{}", file!(), line!()) };
-        let key = Value::from(ident.as_ref());
+        let key = Value::from(ident.clone());
         if let Some(val) = obj.get(&key) {
             // println!("{val:?}");
             return Ok(val.clone());
@@ -160,7 +160,7 @@ fn interpret_function(
         }
         Value::Keyword(Keyword::Delete) => {
             if let [Syntax::Ident(key)] = args {
-                state.borrow_mut().delete(key);
+                state.borrow_mut().delete(key.clone());
             }
             Ok(Value::Undefined.into())
         }
@@ -172,7 +172,7 @@ fn interpret_function(
                 Syntax::Block(args) => args.clone(),
                 other => vec![other.clone()],
             };
-            let args: Vec<String> = args
+            let args: Vec<Rc<str>> = args
                 .into_iter()
                 .map(|syn| match syn {
                     Syntax::Ident(str) => Ok(str),

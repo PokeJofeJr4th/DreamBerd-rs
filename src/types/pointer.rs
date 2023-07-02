@@ -330,7 +330,13 @@ impl From<bool> for Pointer {
 
 impl From<&str> for Pointer {
     fn from(value: &str) -> Self {
-        Self::ConstConst(Rc::new(Value::String(String::from(value))))
+        Self::ConstConst(Rc::new(Value::String(value.into())))
+    }
+}
+
+impl From<Rc<str>> for Pointer {
+    fn from(value: Rc<str>) -> Self {
+        Self::ConstConst(Rc::new(Value::String(value)))
     }
 }
 

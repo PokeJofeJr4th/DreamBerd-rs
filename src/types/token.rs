@@ -1,12 +1,14 @@
+use std::rc::Rc;
+
 #[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Clone)]
 pub enum StringSegment {
-    String(String),
-    Ident(String),
+    String(Rc<str>),
+    Ident(Rc<str>),
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Token {
-    Ident(String),
+    Ident(Rc<str>),
     String(Vec<StringSegment>),
     Space(u8),
     Equal(u8),

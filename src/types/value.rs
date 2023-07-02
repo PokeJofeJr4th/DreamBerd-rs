@@ -4,6 +4,7 @@ use std::{
     fmt::Display,
     hash::Hash,
     ops::{Add, BitAnd, BitOr, Div, Mul, Neg, Rem, Sub},
+    rc::Rc,
 };
 
 use super::{Pointer, Syntax};
@@ -39,10 +40,10 @@ impl From<bool> for Boolean {
 #[repr(C)]
 pub enum Value {
     Boolean(Boolean),
-    String(String),
+    String(Rc<str>),
     Number(f64),
     Object(BTreeMap<Value, Pointer>),
-    Function(Vec<String>, Syntax),
+    Function(Vec<Rc<str>>, Syntax),
     Keyword(Keyword),
     Undefined,
 }
@@ -151,7 +152,9 @@ impl Add for Value {
                     } + num,
                 )
             }
-            (Self::String(lhs), rhs) => Self::String(lhs + &format!("{rhs}")),
+            (Self::String(lhs), rhs) => {
+                Self::String((String::from(&*lhs) + &rhs.to_string()).into())
+            }
             _ => Self::Undefined,
         }
     }
@@ -186,7 +189,7 @@ impl Mul for Value {
                 if num.is_sign_negative() {
                     str_buf = str_buf.chars().rev().collect();
                 }
-                Self::String(str_buf)
+                Self::String(str_buf.into())
             }
             _ => Self::Undefined,
         }
@@ -233,7 +236,7 @@ impl Neg for Value {
             Self::Boolean(Boolean::True) => Self::Boolean(Boolean::False),
             Self::Boolean(Boolean::Maybe) => Self::Boolean(Boolean::Maybe),
             Self::Number(num) => Self::Number(-num),
-            Self::String(str) => Self::String(str.chars().rev().collect()),
+            Self::String(str) => Self::String(str.chars().rev().collect::<String>().into()),
             _ => Self::Undefined,
         }
     }
@@ -345,7 +348,13 @@ impl From<f64> for Value {
 
 impl From<&str> for Value {
     fn from(value: &str) -> Self {
-        Self::String(String::from(value))
+        Self::String(value.into())
+    }
+}
+
+impl From<Rc<str>> for Value {
+    fn from(value: Rc<str>) -> Self {
+        Self::String(value)
     }
 }
 

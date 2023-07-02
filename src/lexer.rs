@@ -33,10 +33,14 @@ fn lex_string<T: Iterator<Item = char>>(chars: &mut Peekable<T>, end: char) -> S
             break;
         }
         if matches!(next, '$' | '£' | '¥') && chars.next() == Some('{') {
-            outer_buf.push(StringSegment::String(core::mem::take(&mut string_buf)));
+            outer_buf.push(StringSegment::String(
+                core::mem::take(&mut string_buf).into(),
+            ));
             for next in chars.by_ref() {
                 if next == '}' {
-                    outer_buf.push(StringSegment::Ident(core::mem::take(&mut string_buf)));
+                    outer_buf.push(StringSegment::Ident(
+                        core::mem::take(&mut string_buf).into(),
+                    ));
                     break;
                 }
                 string_buf.push(next);
@@ -53,7 +57,7 @@ fn lex_string<T: Iterator<Item = char>>(chars: &mut Peekable<T>, end: char) -> S
         }
     }
     if !string_buf.is_empty() {
-        outer_buf.push(StringSegment::String(string_buf));
+        outer_buf.push(StringSegment::String(string_buf.into()));
     }
     Ok(Token::String(outer_buf))
 }
@@ -131,7 +135,7 @@ fn inner_tokenize<T: Iterator<Item = char>>(chars: &mut Peekable<T>) -> SResult<
                         _ => break,
                     }
                 }
-                Token::Ident(ident_buf)
+                Token::Ident(ident_buf.into())
             }
         }
     }))
