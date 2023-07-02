@@ -234,7 +234,7 @@ impl BitOr for Value {
 
 impl Value {
     pub fn eq(&self, rhs: Self, precision: u8) -> Self {
-        if precision == 1 && self.bool() == Boolean::False && rhs.bool() == Boolean::False {
+        if precision <= 2 && self.bool() == Boolean::False && rhs.bool() == Boolean::False {
             return Self::from(true);
         }
         if precision == 2 {
