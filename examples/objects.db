@@ -1,0 +1,13 @@
+const var my_object = {}!
+
+my_object.name = "Samuel"!
+
+my_object.call = ()->{
+    "Hello! My name is " + self.name?
+}!
+
+my_object()!
+
+my_object.name = "Samantha"!
+
+my_object()!

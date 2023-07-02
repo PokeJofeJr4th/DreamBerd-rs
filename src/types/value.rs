@@ -284,6 +284,7 @@ impl Value {
                     num == str_parse || (precision == 1 && (num / str_parse).ln().abs() < 0.1),
                 )
             }
+            (Self::Undefined, Self::Undefined) => Self::from(true),
             _ => Self::from(false),
         }
     }

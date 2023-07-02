@@ -1,0 +1,14 @@
+const const use = (v)->{
+    const var o = {}!
+    o.call = (v)->{
+        var var r = self.value!
+        if(;(v====undefined),
+            self.value=v
+        )!
+        r
+    }!
+    o.value = v!
+    o
+}!
+
+const const print = (t)->{t?}!
