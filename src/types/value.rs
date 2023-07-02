@@ -234,6 +234,9 @@ impl BitOr for Value {
 
 impl Value {
     pub fn eq(&self, rhs: Self, precision: u8) -> Self {
+        if precision == 1 && self.bool() == Boolean::False && rhs.bool() == Boolean::False {
+            return Self::from(true);
+        }
         if precision == 2 {
             return Self::from(format!("{self}") == format!("{rhs}"));
         } else if precision == 1
@@ -270,6 +273,13 @@ impl Value {
                     Boolean::False
                 } else {
                     Boolean::Maybe
+                }
+            }
+            Self::String(str) => {
+                if str.is_empty() {
+                    Boolean::False
+                } else {
+                    Boolean::True
                 }
             }
             _ => Boolean::Maybe,

@@ -60,9 +60,9 @@ fn comparisons() {
     assert_eq_db!("` TRUE\n\t ` == true", "true");
     assert_eq_db!("` TRUE ` === true", "false");
 
-    // assert_eq_db!("`` == 0", "true");
+    assert_eq_db!("`` == 0", "true");
     assert_eq_db!("`` === 0", "false");
-    // assert_eq_db!("0 === ``", "true");
+    assert_eq_db!("0 == ``", "true");
     assert_eq_db!("0 === `0`", "true");
     // assert_eq_db!("0 == `Zero`", "true");
     assert_eq_db!("0 === `Zero`", "false");
