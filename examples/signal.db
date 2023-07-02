@@ -9,11 +9,7 @@ const const use = (val) -> {
     obj
 }!
 
-"use was defined"?
-
 var var x = use(4)!
-
-"x is " + x?
 
 x(10)!
 

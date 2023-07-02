@@ -1,6 +1,6 @@
 use core::hash::Hash;
 use std::cmp::Ordering;
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 use std::ops::{AddAssign, BitAnd, BitOr, DivAssign, MulAssign, Neg, Rem, RemAssign, SubAssign};
 use std::{
     cell::RefCell,
@@ -12,12 +12,23 @@ use super::prelude::*;
 
 /// A pointer to a reference-counted value
 /// A `const const` and `var const` can point to the same value, as can a `const var` and `var var`.
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Clone)]
 pub enum Pointer {
     ConstConst(Rc<Value>),
     ConstVar(Rc<RefCell<Value>>),
     VarConst(Rc<RefCell<Rc<Value>>>),
     VarVar(Rc<RefCell<Rc<RefCell<Value>>>>),
+}
+
+impl Debug for Pointer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ConstConst(val) => write!(f, "ConstConst({val})"),
+            Self::ConstVar(val) => write!(f, "ConstVar({})", val.borrow()),
+            Self::VarConst(val) => write!(f, "VarConst({})", val.borrow()),
+            Self::VarVar(val) => write!(f, "VarVar({})", val.borrow().borrow()),
+        }
+    }
 }
 
 impl Display for Pointer {

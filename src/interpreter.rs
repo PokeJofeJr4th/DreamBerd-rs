@@ -24,62 +24,12 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
             let evaluated = inner_interpret(content, state)?;
             Ok(-evaluated)
         }
-        Syntax::Operation(lhs, op, rhs) => {
-            let mut lhs_eval = inner_interpret(lhs, state.clone())?;
-            if let (Value::Object(_), Operation::Dot, Syntax::Ident(ident)) =
-                (lhs_eval.clone_inner(), op, &**rhs)
-            {
-                return lhs_eval.dot(Value::from(ident.as_ref()));
-            };
-            let rhs_eval = inner_interpret(rhs, state)?;
-            // println!("{lhs:?} op {rhs:?}");
-            // println!("{lhs_eval:?} op {rhs_eval:?}");
-            match op {
-                Operation::Equal(1) => {
-                    lhs_eval.assign(&rhs_eval)?;
-                    Ok(rhs_eval)
-                }
-                Operation::Equal(precision) => Ok(lhs_eval.eq(&rhs_eval, *precision - 1)),
-                Operation::Add => Ok(lhs_eval + rhs_eval),
-                Operation::Sub => Ok(lhs_eval - rhs_eval),
-                Operation::Mul => Ok(lhs_eval * rhs_eval),
-                Operation::Div => Ok(lhs_eval / rhs_eval),
-                Operation::Mod => Ok(lhs_eval % rhs_eval),
-                Operation::Dot => lhs_eval.dot(rhs_eval.clone_inner()),
-                Operation::And => Ok(lhs_eval & rhs_eval),
-                Operation::Or => Ok(lhs_eval | rhs_eval),
-                Operation::AddEq => {
-                    lhs_eval += rhs_eval;
-                    Ok(lhs_eval)
-                }
-                Operation::SubEq => {
-                    lhs_eval -= rhs_eval;
-                    Ok(lhs_eval)
-                }
-                Operation::MulEq => {
-                    lhs_eval *= rhs_eval;
-                    Ok(lhs_eval)
-                }
-                Operation::DivEq => {
-                    lhs_eval /= rhs_eval;
-                    Ok(lhs_eval)
-                }
-                Operation::ModEq => {
-                    lhs_eval %= rhs_eval;
-                    Ok(lhs_eval)
-                }
-                Operation::Ls => Ok(Pointer::from(lhs_eval < rhs_eval)),
-                Operation::LsEq => Ok(Pointer::from(lhs_eval <= rhs_eval)),
-                Operation::Gr => Ok(Pointer::from(lhs_eval > rhs_eval)),
-                Operation::GrEq => Ok(Pointer::from(lhs_eval >= rhs_eval)),
-                Operation::Arrow => todo!(),
-            }
-        }
+        Syntax::Operation(lhs, op, rhs) => interpret_operation(lhs, *op, rhs, state),
         Syntax::Block(statements) => {
             let state = Rc::new(RefCell::new(State::from_parent(state)));
             let mut iter = statements.iter();
             let Some(last) = iter.next_back() else {
-                return Ok(Pointer::from(Value::Undefined))
+                return Ok(Pointer::from(Value::empty_object()))
             };
             for syn in iter {
                 inner_interpret(syn, state.clone())?;
@@ -108,6 +58,73 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
         Syntax::Function(args, body) => {
             Ok(Pointer::from(Value::Function(args.clone(), *body.clone())))
         }
+    }
+}
+
+fn interpret_operation(
+    lhs: &Syntax,
+    op: Operation,
+    rhs: &Syntax,
+    state: Rc<RefCell<State>>,
+) -> SResult<Pointer> {
+    let mut lhs_eval = inner_interpret(lhs, state.clone())?;
+    if let (Value::Object(_), Operation::Dot, Syntax::Ident(ident)) =
+        (&*lhs_eval.as_const(), op, rhs)
+    {
+        let inner_var = lhs_eval.as_var();
+        let Value::Object(ref mut obj) = *inner_var.borrow_mut() else { panic!("Internal Compiler Error at {}:{}", file!(), line!()) };
+        let key = Value::from(ident.as_ref());
+        if let Some(val) = obj.get(&key) {
+            // println!("{val:?}");
+            return Ok(val.clone());
+        }
+        let ptr = Pointer::from(Value::Undefined).convert(VarType::VarVar);
+        // println!("{ptr:?}");
+        obj.insert(key, ptr.clone());
+        return Ok(ptr);
+    }
+    let rhs_eval = inner_interpret(rhs, state)?;
+    // println!("{lhs:?} op {rhs:?}");
+    // println!("{lhs_eval:?} op {rhs_eval:?}");
+    match op {
+        Operation::Equal(1) => {
+            lhs_eval.assign(&rhs_eval)?;
+            Ok(rhs_eval)
+        }
+        Operation::Equal(precision) => Ok(lhs_eval.eq(&rhs_eval, precision - 1)),
+        Operation::Add => Ok(lhs_eval + rhs_eval),
+        Operation::Sub => Ok(lhs_eval - rhs_eval),
+        Operation::Mul => Ok(lhs_eval * rhs_eval),
+        Operation::Div => Ok(lhs_eval / rhs_eval),
+        Operation::Mod => Ok(lhs_eval % rhs_eval),
+        Operation::Dot => lhs_eval.dot(rhs_eval.clone_inner()),
+        Operation::And => Ok(lhs_eval & rhs_eval),
+        Operation::Or => Ok(lhs_eval | rhs_eval),
+        Operation::AddEq => {
+            lhs_eval += rhs_eval;
+            Ok(lhs_eval)
+        }
+        Operation::SubEq => {
+            lhs_eval -= rhs_eval;
+            Ok(lhs_eval)
+        }
+        Operation::MulEq => {
+            lhs_eval *= rhs_eval;
+            Ok(lhs_eval)
+        }
+        Operation::DivEq => {
+            lhs_eval /= rhs_eval;
+            Ok(lhs_eval)
+        }
+        Operation::ModEq => {
+            lhs_eval %= rhs_eval;
+            Ok(lhs_eval)
+        }
+        Operation::Ls => Ok(Pointer::from(lhs_eval < rhs_eval)),
+        Operation::LsEq => Ok(Pointer::from(lhs_eval <= rhs_eval)),
+        Operation::Gr => Ok(Pointer::from(lhs_eval > rhs_eval)),
+        Operation::GrEq => Ok(Pointer::from(lhs_eval >= rhs_eval)),
+        Operation::Arrow => todo!(),
     }
 }
 

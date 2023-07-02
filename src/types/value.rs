@@ -57,6 +57,7 @@ impl PartialOrd for Value {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         match (self, other) {
             (Self::Number(lhs), Self::Number(rhs)) => lhs.partial_cmp(rhs),
+            (Self::String(lhs), Self::String(rhs)) => lhs.partial_cmp(rhs),
             _ => todo!(),
         }
     }
@@ -64,6 +65,9 @@ impl PartialOrd for Value {
 
 impl Ord for Value {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        if let Some(ord) = self.partial_cmp(other) {
+            return ord;
+        };
         todo!()
     }
 }
@@ -74,9 +78,15 @@ impl Display for Value {
             Self::Boolean(b) => write!(f, "{b}"),
             Self::String(str) => write!(f, "{str}"),
             Self::Number(num) => write!(f, "{num}"),
-            Self::Object(obj) => todo!(),
+            Self::Object(obj) => {
+                let mut map = f.debug_map();
+                for (k, v) in obj {
+                    map.entry(&format!("{k}"), &format!("{v}"));
+                }
+                map.finish()
+            }
             Self::Function(args, body) => {
-                write!(f, "{args:?} => {body:?}")
+                write!(f, "{args:?} -> {body:?}")
             }
             Self::Keyword(kw) => write!(f, "{kw}"),
             Self::Undefined => write!(f, "undefined"),
