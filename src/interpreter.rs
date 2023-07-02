@@ -26,7 +26,9 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
         }
         Syntax::Operation(lhs, op, rhs) => {
             let mut lhs_eval = inner_interpret(lhs, state.clone())?;
-            if let (Operation::Dot, Syntax::Ident(ident)) = (op, &**rhs) {
+            if let (Value::Object(_), Operation::Dot, Syntax::Ident(ident)) =
+                (lhs_eval.clone_inner(), op, &**rhs)
+            {
                 return lhs_eval.dot(Value::from(ident.as_ref()));
             };
             let rhs_eval = inner_interpret(rhs, state)?;

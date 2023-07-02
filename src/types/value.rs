@@ -293,6 +293,18 @@ impl From<&str> for Value {
     }
 }
 
+impl From<Keyword> for Value {
+    fn from(value: Keyword) -> Self {
+        Self::Keyword(value)
+    }
+}
+
+impl From<Boolean> for Value {
+    fn from(value: Boolean) -> Self {
+        Self::Boolean(value)
+    }
+}
+
 #[derive(PartialEq, Eq, Debug, Hash, Clone, Copy)]
 pub enum Keyword {
     Const,

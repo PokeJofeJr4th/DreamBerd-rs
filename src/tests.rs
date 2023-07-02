@@ -11,6 +11,12 @@ fn eval<T: Display>(src: T) -> SResult<Value> {
     )
 }
 
+macro_rules! assert_eq_db {
+    ($lhs: expr, $rhs: expr) => {
+        assert_eq!(eval($lhs), eval($rhs))
+    };
+}
+
 #[test]
 fn divide() {
     assert_eq!(Value::from(1.0) / Value::from(0.0), Value::Undefined);
@@ -31,42 +37,48 @@ fn eq() {
 
 #[test]
 fn maybe_or_and() {
-    assert_eq!(eval("(true | true)"), Ok(Value::from(true)));
-    assert_eq!(eval("(true | false)"), Ok(Value::from(true)));
-    assert_eq!(eval("(false | false)"), Ok(Value::from(false)));
-    assert_eq!(eval("(maybe | false)"), Ok(Value::Boolean(Boolean::Maybe)));
-    assert_eq!(eval("(maybe | true)"), Ok(Value::from(true)));
-    assert_eq!(eval("(maybe | maybe)"), Ok(Value::Boolean(Boolean::Maybe)));
-    assert_eq!(eval("(true & true)"), Ok(Value::from(true)));
-    assert_eq!(eval("(true & false)"), Ok(Value::from(false)));
-    assert_eq!(eval("(false & false)"), Ok(Value::from(false)));
-    assert_eq!(eval("(maybe & false)"), Ok(Value::from(false)));
-    assert_eq!(eval("(maybe & true)"), Ok(Value::Boolean(Boolean::Maybe)));
-    assert_eq!(eval("(maybe & maybe)"), Ok(Value::Boolean(Boolean::Maybe)));
+    assert_eq_db!("true | true", "true");
+    assert_eq_db!("true | true", "true");
+    assert_eq_db!("true | false", "true");
+    assert_eq_db!("false | false", "false");
+    assert_eq_db!("maybe | false", "maybe");
+    assert_eq_db!("maybe | true", "true");
+    assert_eq_db!("maybe | maybe", "maybe");
+    assert_eq_db!("true & true", "true");
+    assert_eq_db!("true & false", "false");
+    assert_eq_db!("false & false", "false");
+    assert_eq_db!("maybe & false", "false");
+    assert_eq_db!("maybe & true", "maybe");
+    assert_eq_db!("maybe & maybe", "maybe");
 }
 
 #[test]
 fn comparisons() {
-    assert_eq!(eval("`true` === true"), Ok(Value::from(true)));
-    assert_eq!(eval("`true` ==== true"), Ok(Value::from(false)));
-    assert_eq!(eval("`false` === true"), Ok(Value::from(false)));
-    assert_eq!(eval("` TRUE\n\t ` == true"), Ok(Value::from(true)));
-    assert_eq!(eval("` TRUE ` === true"), Ok(Value::from(false)));
+    assert_eq_db!("`true` === true", "true");
+    assert_eq_db!("`true` ==== true", "false");
+    assert_eq_db!("`false` === true", "false");
+    assert_eq_db!("` TRUE\n\t ` == true", "true");
+    assert_eq_db!("` TRUE ` === true", "false");
+
+    // assert_eq_db!("`` == 0", "true");
+    assert_eq_db!("`` === 0", "false");
+    // assert_eq_db!("0 === ``", "true");
+    assert_eq_db!("0 === `0`", "true");
+    // assert_eq_db!("0 == `Zero`", "true");
+    assert_eq_db!("0 === `Zero`", "false");
+    assert_eq_db!("22/7 == 🥧", "true");
 }
 
 #[test]
 fn op_assign() {
-    assert_eq!(
-        eval("{const var count = 0! count += 1! count}"),
-        Ok(Value::Number(1.0))
+    assert_eq_db!("{const var count = 0! count += 1! count}", "1");
+    assert_eq_db!(
+        "{const var msg = 'hello'! msg += 'world'! msg}",
+        "`helloworld`"
     );
-    assert_eq!(
-        eval("{const var msg = 'hello'! msg += 'world'! msg}"),
-        Ok(Value::String(String::from("helloworld")))
-    );
-    assert_eq!(
-        eval("{const var msg = 'i did '! msg += -msg! msg}"),
-        Ok(Value::String(String::from("i did  did i")))
+    assert_eq_db!(
+        "{const var msg = 'i did '! msg += -msg! msg}",
+        "`i did  did i`"
     );
 }
 
@@ -76,4 +88,21 @@ fn function() {
         eval("const const does_she_really_like_you = () -> maybe! does_she_really_like_you"),
         Ok(Value::Function(Vec::new(), Syntax::Ident("maybe".into())))
     );
+}
+
+#[test]
+fn doc_tests() {
+    assert_eq_db!(";'hello there'", "'ereht olleh'");
+    assert_eq_db!("-true", "false");
+    assert_eq_db!(";1", "-1");
+    assert_eq_db!("const var age = 1! age += 1! age", "2");
+    assert_eq_db!("var const id = 'name'! id = 'main'! id", "'main'");
+    assert_eq_db!("var var count = 0! count += 1! count = 2! count", "2");
+    assert_eq_db!("const const 5 = 4! 2 + 2  ====  5", "true");
+    assert_eq_db!("const const true = false! true === false", "true");
+    assert_eq_db!("1 + 2*3", "7");
+    assert_eq_db!("1+2 * 3", "9");
+    assert_eq_db!("`he` + `l`*2 + `o ` + ;`dlrow`", "`hello world`");
+    assert_eq_db!("`johnny` * 1.5", "`johnnyjoh`");
+    assert_eq_db!("`no lemon ` + -`no lemon`", "`no lemon nomel on`");
 }

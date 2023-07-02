@@ -27,6 +27,8 @@ There are four types of declarations. Constant constants can't be changed at all
 
 ```
 const const name = "Ava"!
+name += "?"! // does nothing
+name = "John"! // does nothing
 ```
 
 Constant variables can be edited but not reassigned.
@@ -34,14 +36,15 @@ Constant variables can be edited but not reassigned.
 ```
 const var age = 1!
 age += 1!
-// implementation under construction
+age? // 2
 ```
 
 Variable constants can be reassigned but not edited.
 
 ```
 var const id = "main"!
-// implementation under construction
+id = "no thank you"!
+id? // "no thank you"
 ```
 
 Variable variables can be reassigned and edited.
@@ -49,7 +52,7 @@ Variable variables can be reassigned and edited.
 ```
 var var count = 0!
 count += 1!
-// implementation under construction
+count = 2!
 ```
 
 ## Naming
@@ -77,12 +80,14 @@ Booleans can be `true`, `false`, or `maybe`.
 
 ## Strings
 
-Strings can be declared with zero quotes, single quotes, or double quotes.
+Strings can be declared with backticks, single quotes, double quotes, zero quotes, or even french quotes.
 
 ```
-const const name = L!
+const const name = `Jeremy`!
 const const name = 'Lu'!
 const const name = "Luke"!
+const const name = L!
+const const name = «antoine»!
 ```
 
 ## Arithmetic
@@ -139,6 +144,7 @@ Finally, if you want to be much less precise, you can use `==`.
 
 ```
 3 == 3.14? // true
+🥧 == 22/7? // true
 ```
 
 ## Functions

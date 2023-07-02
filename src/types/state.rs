@@ -4,16 +4,35 @@ use lazy_regex::regex;
 
 use crate::types::prelude::*;
 
+use core::f64::consts as f64;
+
 #[derive(Debug, PartialEq)]
 pub struct State {
     current: HashMap<String, Pointer>,
     parent: Option<Rc<RefCell<State>>>,
 }
 
+macro_rules! kw {
+    ($current:ident $str:expr => $kw:expr) => {
+        $current.insert($str.into(), Pointer::from(Value::from($kw)))
+    };
+}
+
 impl State {
     pub fn new() -> Self {
+        let mut current = HashMap::new();
+        kw!(current "🥧" => f64::PI);
+        kw!(current "delete" => Keyword::Delete);
+        kw!(current "const" => Keyword::Const);
+        kw!(current "var" => Keyword::Var);
+        kw!(current "if" => Keyword::If);
+        kw!(current "use" => Keyword::Use);
+        kw!(current "true" => true);
+        kw!(current "false" => false);
+        kw!(current "maybe" => Boolean::Maybe);
+        kw!(current "undefined" => Value::Undefined);
         Self {
-            current: HashMap::new(),
+            current,
             parent: None,
         }
     }
@@ -42,42 +61,6 @@ impl State {
             new_val
         } else if regex!("^f?u?n?c?t?i?o?n?$").is_match(key) {
             let v = Pointer::ConstConst(Rc::new(Value::Keyword(Keyword::Function)));
-            self.current.insert(String::from(key), v.clone());
-            v
-        } else if key == "delete" {
-            let v = Pointer::ConstConst(Rc::new(Value::Keyword(Keyword::Delete)));
-            self.current.insert(String::from(key), v.clone());
-            v
-        } else if key == "const" {
-            let v = Pointer::ConstConst(Rc::new(Value::Keyword(Keyword::Const)));
-            self.current.insert(String::from(key), v.clone());
-            v
-        } else if key == "var" {
-            let v = Pointer::ConstConst(Rc::new(Value::Keyword(Keyword::Var)));
-            self.current.insert(String::from(key), v.clone());
-            v
-        } else if key == "if" {
-            let v = Pointer::ConstConst(Rc::new(Value::Keyword(Keyword::If)));
-            self.current.insert(String::from(key), v.clone());
-            v
-        } else if key == "use" {
-            let v = Pointer::ConstConst(Rc::new(Value::Keyword(Keyword::Use)));
-            self.current.insert(String::from(key), v.clone());
-            v
-        } else if key == "true" {
-            let v = Pointer::ConstConst(Rc::new(Value::from(true)));
-            self.current.insert(String::from(key), v.clone());
-            v
-        } else if key == "false" {
-            let v = Pointer::ConstConst(Rc::new(Value::from(false)));
-            self.current.insert(String::from(key), v.clone());
-            v
-        } else if key == "maybe" {
-            let v = Pointer::ConstConst(Rc::new(Value::Boolean(Boolean::Maybe)));
-            self.current.insert(String::from(key), v.clone());
-            v
-        } else if key == "undefined" {
-            let v = Pointer::ConstConst(Rc::new(Value::Undefined));
             self.current.insert(String::from(key), v.clone());
             v
         } else {
