@@ -40,6 +40,16 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
                     return Err(format!("Expected a variable name after `{id} {second}`"))
                 };
                 consume_whitespace(tokens);
+                // consume a type definition
+                if tokens.peek() == Some(&Token::Colon) {
+                    tokens.next();
+                    consume_whitespace(tokens);
+                    match tokens.next() {
+                        Some(Token::Ident(_)) => {}
+                        other => return Err(format!("Expected a type after `:`, got `{other:?}`")),
+                    }
+                    consume_whitespace(tokens);
+                }
                 let value = match tokens.next() {
                     Some(Token::Bang(_)) => Syntax::Ident(String::new()),
                     Some(Token::Equal(1)) => {
@@ -48,7 +58,7 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
                     }
                     other => {
                         return Err(format!(
-                            "Expected `!` or `=` after variable name, got `{other:?}`"
+                            "Expected `!`, `:`, or `=` after variable name, got `{other:?}`"
                         ))
                     }
                 };

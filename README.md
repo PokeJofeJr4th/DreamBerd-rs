@@ -65,6 +65,19 @@ count += 1!
 count = 2!
 ```
 
+### Types
+
+DreamBerd is a weakly-typed language. However, type annotations can be added to declarations.
+
+```java
+var const name: String = "Gary"!
+const var age: i32 = 22!
+```
+
+> ##### Technical Info
+>
+> Type annotations don't actually do anything, but they help people feel more comfortable
+
 ## Naming
 
 Both variables and constants can be named with any Unicode character or string that isn't interpreted as another feature.
@@ -99,11 +112,11 @@ Numbers between 0 and 1, numbers that are not a number, keywords, functions, and
 Strings can be declared with backticks, single quotes, double quotes, zero quotes, or even french quotes!
 
 ```java
-const const name = `Jeremy`!
-const const name = 'Lu'!
-const const name = "Luke"!
-const const name = L!
-const const name = «antoine»!
+const const name: String = `Jeremy`!
+const const name: String = 'Lu'!
+const const name: String = "Luke"!
+const const name: String = L!
+const const name: String = «antoine»!
 ```
 
 ## Arithmetic
@@ -111,8 +124,14 @@ const const name = «antoine»!
 DreamBerd has significant whitespace. Use spacing to specify the order of arithmetic operations.
 
 ```java
-1 + 2*3? //7
-1+2 * 3? //9
+1 + 2*3? // 7
+1+2 * 3? // 9
+```
+
+For operations with the same amount of whitespace, grouping is poorly defined.
+
+```java
+1+1*1+1? // 4
 ```
 
 You can add strings together and multiply them by numbers. Negating a string reverses it.

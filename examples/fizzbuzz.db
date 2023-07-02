@@ -1,12 +1,18 @@
-const const loop🤫 = (idx, dur) -> {
-    var var msg = ""!
-    if(idx % 3  ====  0, {msg += "fizz"!})!
-    if(idx % 5  ====  0, {msg += "buzz"!})!
+const const loop🤫: Function = (idx, dur) -> {
+    var var msg: String = ""!
+    if(idx % 3  ====  0, {
+        msg += "fizz"!
+    })!
+    if(idx % 5  ====  0, {
+        msg += "buzz"!
+    })!
     if(msg ==== "", {
         msg = idx!
     })!
     msg?
-    if(idx < dur, loop🤫(idx + 1, dur))!
+    if(idx < dur, 
+        loop🤫(idx + 1, dur)
+    )!
 }!
 
 loop🤫(1, 20)!

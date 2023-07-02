@@ -22,10 +22,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let path = PathBuf::from(args.path);
     let file = format!("{{{}}}", fs::read_to_string(path)?);
     let tokens = lexer::tokenize(&file)?;
-    println!("{tokens:?}");
+    // println!("{tokens:?}");
     let parsed = parser::parse(tokens)?;
-    println!("{parsed:?}");
+    // println!("{parsed:?}");
     let result = interpreter::interpret(&parsed)?;
-    println!("{result:?}");
+    // println!("{result:?}");
     Ok(())
 }
