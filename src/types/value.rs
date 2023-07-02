@@ -1,4 +1,5 @@
 use std::{
+    cmp::Ordering,
     collections::BTreeMap,
     fmt::Display,
     hash::Hash,
@@ -7,7 +8,7 @@ use std::{
 
 use super::{Pointer, Syntax};
 
-#[derive(PartialEq, Eq, Debug, Hash, Clone, Copy)]
+#[derive(PartialEq, Eq, Debug, Hash, Clone, Copy, PartialOrd, Ord)]
 pub enum Boolean {
     True,
     False,
@@ -35,6 +36,7 @@ impl From<bool> for Boolean {
 }
 
 #[derive(PartialEq, Debug, Clone)]
+#[repr(C)]
 pub enum Value {
     Boolean(Boolean),
     String(String),
@@ -54,17 +56,27 @@ impl Default for Value {
 }
 
 impl PartialOrd for Value {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match unsafe {
+            core::mem::transmute::<_, u64>(core::mem::discriminant(self)).cmp(
+                &core::mem::transmute::<_, u64>(core::mem::discriminant(other)),
+            )
+        } {
+            Ordering::Equal => {}
+            other => return Some(other),
+        }
         match (self, other) {
             (Self::Number(lhs), Self::Number(rhs)) => lhs.partial_cmp(rhs),
             (Self::String(lhs), Self::String(rhs)) => lhs.partial_cmp(rhs),
+            (Self::Boolean(lhs), Self::Boolean(rhs)) => lhs.partial_cmp(rhs),
+            (Self::Keyword(lhs), Self::Keyword(rhs)) => lhs.partial_cmp(rhs),
             _ => todo!(),
         }
     }
 }
 
 impl Ord for Value {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    fn cmp(&self, other: &Self) -> Ordering {
         if let Some(ord) = self.partial_cmp(other) {
             return ord;
         };
@@ -349,7 +361,7 @@ impl From<Boolean> for Value {
     }
 }
 
-#[derive(PartialEq, Eq, Debug, Hash, Clone, Copy)]
+#[derive(PartialEq, Eq, Debug, Hash, Clone, Copy, PartialOrd, Ord)]
 pub enum Keyword {
     Const,
     Var,
