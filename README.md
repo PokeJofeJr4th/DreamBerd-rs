@@ -239,7 +239,11 @@ You can also set the `call` keyword to a function, which can use the `self` keyw
 my_object.call = ()->{"hello, my name is "+self.name?}!
 ```
 
-## Signals
+## Zero-Abstraction Abstractions
+
+Lots of popular languages use so-called "zero-cost abstractions". DreamBerd instead has zero-_abstraction_ abstractions, which are features that provide runtime costs for little-to-no utility.
+
+### Signals
 
 To use a signal, use `use`.
 
