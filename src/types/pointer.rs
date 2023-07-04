@@ -3,7 +3,6 @@ use std::cmp::Ordering;
 use std::fmt::{Debug, Display};
 use std::ops::{AddAssign, BitAnd, BitOr, DivAssign, MulAssign, Neg, Rem, RemAssign, SubAssign};
 use std::{
-    cell::RefCell,
     ops::{Add, Div, Mul, Sub},
     rc::Rc,
 };
@@ -15,9 +14,9 @@ use super::prelude::*;
 #[derive(PartialEq, Eq, Clone)]
 pub enum Pointer {
     ConstConst(Rc<Value>),
-    ConstVar(Rc<RefCell<Value>>),
-    VarConst(Rc<RefCell<Rc<Value>>>),
-    VarVar(Rc<RefCell<Rc<RefCell<Value>>>>),
+    ConstVar(RcMut<Value>),
+    VarConst(RcMut<Rc<Value>>),
+    VarVar(RcMut<RcMut<Value>>),
 }
 
 impl Debug for Pointer {
@@ -70,8 +69,8 @@ impl Pointer {
         match vt {
             VarType::ConstConst => Self::ConstConst(self.as_const()),
             VarType::ConstVar => Self::ConstVar(self.as_var()),
-            VarType::VarConst => Self::VarConst(Rc::new(RefCell::new(self.as_const()))),
-            VarType::VarVar => Self::VarVar(Rc::new(RefCell::new(self.as_var()))),
+            VarType::VarConst => Self::VarConst(rc_mut_new(self.as_const())),
+            VarType::VarVar => Self::VarVar(rc_mut_new(self.as_var())),
         }
     }
 
@@ -79,9 +78,9 @@ impl Pointer {
     // pub fn from_value(val: Value, vt: VarType) -> Self {
     //     match vt {
     //         VarType::ConstConst => Self::ConstConst(Rc::new(val)),
-    //         VarType::ConstVar => Self::ConstVar(Rc::new(RefCell::new(val))),
-    //         VarType::VarConst => Self::VarConst(Rc::new(RefCell::new(Rc::new(val)))),
-    //         VarType::VarVar => Self::VarVar(Rc::new(RefCell::new(Rc::new(RefCell::new(val))))),
+    //         VarType::ConstVar => Self::ConstVar(rc_mut_new(val)),
+    //         VarType::VarConst => Self::VarConst(rc_mut_new(Rc::new(val))),
+    //         VarType::VarVar => Self::VarVar(rc_mut_new(rc_mut_new(val))),
     //     }
     // }
 
@@ -127,7 +126,7 @@ impl Pointer {
                 Some(ptr) => Ok(ptr.clone()),
                 None => {
                     let val = if allow_modify {
-                        Self::ConstVar(Rc::new(RefCell::new(Value::Undefined)))
+                        Self::ConstVar(rc_mut_new(Value::Undefined))
                     } else {
                         Self::ConstConst(Rc::new(Value::Undefined))
                     };
@@ -165,10 +164,10 @@ impl Pointer {
         }
     }
 
-    pub fn as_var(&self) -> Rc<RefCell<Value>> {
+    pub fn as_var(&self) -> RcMut<Value> {
         match self {
-            Self::ConstConst(val) => Rc::new(RefCell::new(val.as_ref().clone())),
-            Self::VarConst(val) => Rc::new(RefCell::new(val.borrow().as_ref().clone())),
+            Self::ConstConst(val) => rc_mut_new(val.as_ref().clone()),
+            Self::VarConst(val) => rc_mut_new(val.borrow().as_ref().clone()),
             Self::ConstVar(val) => val.clone(),
             Self::VarVar(val) => val.borrow().clone(),
         }

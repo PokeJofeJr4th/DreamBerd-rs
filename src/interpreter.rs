@@ -1,12 +1,12 @@
-use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
+use std::{collections::BTreeMap, rc::Rc};
 
 use crate::types::prelude::*;
 
 pub fn interpret(src: &Syntax) -> SResult<Pointer> {
-    inner_interpret(src, Rc::new(RefCell::new(State::new())))
+    inner_interpret(src, rc_mut_new(State::new()))
 }
 
-fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> {
+fn inner_interpret(src: &Syntax, state: RcMut<State>) -> SResult<Pointer> {
     match src {
         Syntax::Debug(content, level) => {
             if *level >= 3 {
@@ -26,7 +26,7 @@ fn inner_interpret(src: &Syntax, state: Rc<RefCell<State>>) -> SResult<Pointer> 
         }
         Syntax::Operation(lhs, op, rhs) => interpret_operation(lhs, *op, rhs, state),
         Syntax::Block(statements) => {
-            let state = Rc::new(RefCell::new(State::from_parent(state)));
+            let state = rc_mut_new(State::from_parent(state));
             let mut iter = statements.iter();
             let Some(last) = iter.next_back() else {
                 return Ok(Pointer::from(Value::empty_object()))
@@ -76,7 +76,7 @@ fn interpret_operation(
     lhs: &Syntax,
     op: Operation,
     rhs: &Syntax,
-    state: Rc<RefCell<State>>,
+    state: RcMut<State>,
 ) -> SResult<Pointer> {
     let mut lhs_eval = inner_interpret(lhs, state.clone())?;
     if let (Value::Object(_), Operation::Dot, Syntax::Ident(ident)) =
@@ -139,11 +139,7 @@ fn interpret_operation(
     }
 }
 
-fn interpret_function(
-    func: &Pointer,
-    args: &[Syntax],
-    state: Rc<RefCell<State>>,
-) -> SResult<Pointer> {
+fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> SResult<Pointer> {
     let func_eval = (*func.as_const()).clone();
     match func_eval {
         Value::Keyword(Keyword::If) => {
@@ -202,7 +198,7 @@ fn interpret_function(
             };
             let mut new_state = State::from_parent(state);
             new_state.insert("self".into(), func.clone());
-            interpret_function(call, args, Rc::new(RefCell::new(new_state)))
+            interpret_function(call, args, rc_mut_new(new_state))
         }
         Value::Function(fn_args, body) => {
             let mut inner_state = State::from_parent(state.clone());
@@ -214,7 +210,7 @@ fn interpret_function(
                 };
                 inner_state.insert(ident.clone(), arg_eval);
             }
-            inner_interpret(&body, Rc::new(RefCell::new(inner_state)))
+            inner_interpret(&body, rc_mut_new(inner_state))
         }
 
         other => Err(format!("`{other:?}` is not a function")),

@@ -9,7 +9,7 @@ use core::f64::consts as f64;
 #[derive(Debug, PartialEq)]
 pub struct State {
     current: HashMap<Rc<str>, Pointer>,
-    parent: Option<Rc<RefCell<State>>>,
+    parent: Option<RcMut<State>>,
 }
 
 macro_rules! kw {

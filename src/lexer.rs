@@ -92,9 +92,11 @@ fn inner_tokenize<T: Iterator<Item = char>>(chars: &mut Peekable<T>) -> SResult<
         ',' => Token::Comma,
         '&' => Token::And,
         '|' => Token::Or,
-        '+' => multi_character_pattern!(chars Token::Plus; {'=' => Token::PlusEq}),
+        '+' => {
+            multi_character_pattern!(chars Token::Plus; {'=' => Token::PlusEq, '+' => Token::PlusPlus})
+        }
         '-' => {
-            multi_character_pattern!(chars Token::Tack; {'=' => Token::TackEq, '>' => Token::Arrow})
+            multi_character_pattern!(chars Token::Tack; {'=' => Token::TackEq, '>' => Token::Arrow, '-' => Token::TackTack})
         }
         '*' => multi_character_pattern!(chars Token::Star; {'=' => Token::StarEq}),
         '/' => multi_character_pattern!(chars Token::Slash; {'=' => Token::SlashEq}),

@@ -14,4 +14,3 @@ const const use: Fn<T> = (v:T)->{
 const const print: Fn<String> = (t:String)->{t?}!
 
 const const str: Fn<T> = (t:T)->{`${t}`}!
-
