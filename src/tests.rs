@@ -105,6 +105,7 @@ fn doc_tests() {
     assert_eq_db!("const var age = 1! age += 1! age", "2");
     assert_eq_db!("var const id = 'name'! id = 'main'! id", "'main'");
     assert_eq_db!("var var count = 0! count += 1! count = 2! count", "2");
+    assert_eq_db!("var var name = 'john'! name += '!'! name", "'john!'");
     assert_eq_db!("const const 5 = 4! 2 + 2  ====  5", "true");
     assert_eq_db!("const const true = false! true === false", "true");
     assert_eq_db!("1 + 2*3", "7");
@@ -135,5 +136,16 @@ const const print = (txt) -> {txt?}!
 
 #[test]
 fn string_interpolation() {
-    assert_eq_db!("const const name = `John`! `Hi, I'm ${name}`", "`Hi, I'm John`");
+    assert_eq_db!(
+        "const const name = `John`! `Hi, I'm ${name}`",
+        "`Hi, I'm John`"
+    );
+    assert_eq_db!(
+        "const const name = `John`! `Hi, I'm ¥{name}`",
+        "`Hi, I'm John`"
+    );
+    assert_eq_db!(
+        "const const name = `John`! `Hi, I'm {name}€`",
+        "`Hi, I'm John`"
+    );
 }

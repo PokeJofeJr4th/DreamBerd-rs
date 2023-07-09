@@ -8,45 +8,62 @@ pub(super) fn parse_group<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -
     let mut groups_buf = Vec::new();
     let tail;
     loop {
-        let left = inner_parse(tokens)?;
-        let mut spc = if let Some(&Token::Space(spc)) = tokens.peek() {
-            tokens.next();
-            spc
-        } else {
-            0
-        };
-        let op = match tokens.peek() {
-            Some(&Token::Equal(eq)) => Operation::Equal(eq),
-            Some(Token::Plus) => Operation::Add,
-            Some(Token::PlusEq) => Operation::AddEq,
-            Some(Token::Tack) => Operation::Sub,
-            Some(Token::TackEq) => Operation::SubEq,
-            Some(Token::Star) => Operation::Mul,
-            Some(Token::StarEq) => Operation::MulEq,
-            Some(Token::Slash) => Operation::Div,
-            Some(Token::SlashEq) => Operation::DivEq,
-            Some(Token::Percent) => Operation::Mod,
-            Some(Token::PercentEq) => Operation::ModEq,
-            Some(Token::LCaret) => Operation::Ls,
-            Some(Token::LCaretEq) => Operation::LsEq,
-            Some(Token::RCaret) => Operation::Gr,
-            Some(Token::RCaretEq) => Operation::GrEq,
-            Some(Token::Dot) => Operation::Dot,
-            Some(Token::And) => Operation::And,
-            Some(Token::Or) => Operation::Or,
-            Some(Token::Arrow) => Operation::Arrow,
-            _ => {
-                tail = left;
-                break;
-            }
-        };
-        tokens.next();
-        if let Some(&Token::Space(spc_right)) = tokens.peek() {
-            spc += spc_right;
+        if let Some(t) = grab_op(tokens, &mut groups_buf)? {
+            tail = t;
+            break;
         }
-        groups_buf.push((left, op, spc));
     }
     group(groups_buf, tail)
+}
+
+/// get the next operator, including handling unaries
+fn grab_op<T: Iterator<Item = Token>>(
+    tokens: &mut Peekable<T>,
+    groups_buf: &mut Vec<OpGroup>,
+) -> SResult<Option<Syntax>> {
+    let left = inner_parse(tokens)?;
+    let mut spc = if let Some(&Token::Space(spc)) = tokens.peek() {
+        tokens.next();
+        spc
+    } else {
+        0
+    };
+    let op = match tokens.peek() {
+        Some(&Token::Equal(eq)) => Operation::Equal(eq),
+        Some(Token::Plus) => Operation::Add,
+        Some(Token::PlusEq) => Operation::AddEq,
+        Some(Token::Tack) => Operation::Sub,
+        Some(Token::TackEq) => Operation::SubEq,
+        Some(Token::Star) => Operation::Mul,
+        Some(Token::StarEq) => Operation::MulEq,
+        Some(Token::Slash) => Operation::Div,
+        Some(Token::SlashEq) => Operation::DivEq,
+        Some(Token::Percent) => Operation::Mod,
+        Some(Token::PercentEq) => Operation::ModEq,
+        Some(Token::LCaret) => Operation::Ls,
+        Some(Token::LCaretEq) => Operation::LsEq,
+        Some(Token::RCaret) => Operation::Gr,
+        Some(Token::RCaretEq) => Operation::GrEq,
+        Some(Token::Dot) => Operation::Dot,
+        Some(Token::And) => Operation::And,
+        Some(Token::Or) => Operation::Or,
+        Some(Token::Arrow) => Operation::Arrow,
+        Some(Token::PlusPlus) => {
+            todo!()
+        }
+        Some(Token::TackTack) => {
+            todo!()
+        }
+        _ => {
+            return Ok(Some(left));
+        }
+    };
+    tokens.next();
+    if let Some(&Token::Space(spc_right)) = tokens.peek() {
+        spc += spc_right;
+    }
+    groups_buf.push((left, op, spc));
+    Ok(None)
 }
 
 /// merge operators until only the tail remains

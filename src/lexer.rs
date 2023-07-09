@@ -32,7 +32,8 @@ fn lex_string<T: Iterator<Item = char>>(chars: &mut Peekable<T>, end: char) -> S
         if next == end {
             break;
         }
-        if matches!(next, '$' | '£' | '¥') && chars.next() == Some('{') {
+        if matches!(next, '$' | '£' | '¥') && chars.peek() == Some(&'{') {
+            chars.next();
             outer_buf.push(StringSegment::String(
                 core::mem::take(&mut string_buf).into(),
             ));
@@ -45,15 +46,34 @@ fn lex_string<T: Iterator<Item = char>>(chars: &mut Peekable<T>, end: char) -> S
                 }
                 string_buf.push(next);
             }
+        } else if next == '{' {
+            let mut ident_buf = String::new();
+            for next in chars.by_ref() {
+                if next == '}' {
+                    break;
+                }
+                ident_buf.push(next);
+            }
+            if matches!(chars.peek(), Some('€' | '円' | '₽')) {
+                chars.next();
+                outer_buf.push(StringSegment::String(
+                    core::mem::take(&mut string_buf).into(),
+                ));
+                outer_buf.push(StringSegment::Ident(ident_buf.into()));
+            } else {
+                string_buf.push('{');
+                string_buf.push_str(&ident_buf);
+                string_buf.push('}');
+            }
+        } else if next == '\\' {
+            string_buf.push(next);
+            string_buf.push(
+                chars
+                    .next()
+                    .ok_or_else(|| String::from("Unexpected end of file"))?,
+            );
         } else {
             string_buf.push(next);
-            if next == '\\' {
-                string_buf.push(
-                    chars
-                        .next()
-                        .ok_or_else(|| String::from("Unexpected end of file"))?,
-                );
-            }
         }
     }
     if !string_buf.is_empty() {

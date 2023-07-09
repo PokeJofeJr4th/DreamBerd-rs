@@ -134,6 +134,12 @@ print("Hello £{name}!")!
 print("Hello ¥{name}!")!
 ```
 
+And make sure to follow your local typographical norms
+
+```java
+print("Hello {name}€")!
+```
+
 ## Arithmetic
 
 DreamBerd has significant whitespace. Use spacing to specify the order of arithmetic operations.
