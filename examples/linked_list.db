@@ -9,7 +9,10 @@ const const new:Fn<T> = (item:T)->{
 }!
 
 const const index:Fn<T[],Number> = (o:T[],i:Number)->{
-    if(;(number===0),index(o.next,i-1))
+    var const ret:Option<T> = undefined!
+    if(i>0,ret = index(o.next,i-1))!
+    if(i===0,ret = o.value)
+    ret
 }!
 
 const const push:Fn<T[],T> = (o:T[],x:T)->{
