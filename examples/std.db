@@ -1,5 +1,5 @@
-const const use: Fn<T> = (v:T)->{
-    const var o = {}!
+const const use:Fn<T> = (v:T)->{
+    const var o={}!
     o.call = (v:T)->{
         var var r:T = self.value!
         if(;(v====undefined),
@@ -7,10 +7,10 @@ const const use: Fn<T> = (v:T)->{
         )!
         r
     }!
-    o.value:T = v!
+    o.value:T=v!
     o
 }!
 
-const const print: Fn<String> = (t:String)->{t?}!
+const const print:Fn<String> = (t:String)->{t?}!
 
-const const str: Fn<T> = (t:T)->{`${t}`}!
+const const str:Fn<T> = (t:T)->{`${t}`}!

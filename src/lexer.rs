@@ -34,14 +34,18 @@ fn lex_string<T: Iterator<Item = char>>(chars: &mut Peekable<T>, end: char) -> S
         }
         if matches!(next, '$' | '£' | '¥') && chars.peek() == Some(&'{') {
             chars.next();
-            outer_buf.push(StringSegment::String(
-                core::mem::take(&mut string_buf).into(),
-            ));
+            if !string_buf.is_empty() {
+                outer_buf.push(StringSegment::String(
+                    core::mem::take(&mut string_buf).into(),
+                ));
+            }
             for next in chars.by_ref() {
                 if next == '}' {
-                    outer_buf.push(StringSegment::Ident(
-                        core::mem::take(&mut string_buf).into(),
-                    ));
+                    if !string_buf.is_empty() {
+                        outer_buf.push(StringSegment::Ident(
+                            core::mem::take(&mut string_buf).into(),
+                        ));
+                    }
                     break;
                 }
                 string_buf.push(next);
@@ -56,9 +60,11 @@ fn lex_string<T: Iterator<Item = char>>(chars: &mut Peekable<T>, end: char) -> S
             }
             if matches!(chars.peek(), Some('€' | '円' | '₽')) {
                 chars.next();
-                outer_buf.push(StringSegment::String(
-                    core::mem::take(&mut string_buf).into(),
-                ));
+                if !string_buf.is_empty() {
+                    outer_buf.push(StringSegment::String(
+                        core::mem::take(&mut string_buf).into(),
+                    ));
+                }
                 outer_buf.push(StringSegment::Ident(ident_buf.into()));
             } else {
                 string_buf.push('{');
