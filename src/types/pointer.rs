@@ -113,7 +113,7 @@ impl Pointer {
 
     /// Apply the dot operator. This has two valid cases: float parsing and object indexing. Otherwise, it returns `undefined`
     #[allow(clippy::option_if_let_else, clippy::single_match_else)]
-    pub fn dot(&self, rhs: Value) -> SResult<Self> {
+    pub fn dot(&self, rhs: &Value) -> SResult<Self> {
         let allow_modify = matches!(self, Self::ConstVar(_) | Self::VarVar(_));
         let lhs = self.clone_inner();
         match (lhs, rhs) {
@@ -130,7 +130,7 @@ impl Pointer {
                     } else {
                         Self::ConstConst(Rc::new(Value::Undefined))
                     };
-                    obj.insert(key, val.clone());
+                    obj.insert(key.clone(), val.clone());
                     Ok(val)
                 }
             },
@@ -138,6 +138,7 @@ impl Pointer {
         }
     }
 
+    /// Try to replace the current value with given value. Returns `Err` if `self` is ptr-const. Doesn't clone if it's not necessary.
     pub fn assign(&self, rhs: &Self) -> SResult<()> {
         match self {
             Self::ConstConst(_) => Err(format!("Can't assign to a `const const` {self:?}")),
@@ -155,6 +156,9 @@ impl Pointer {
         }
     }
 
+    /// Convert to an immutable reference to a value. If `self` is value-var, clones the internal value.
+    ///
+    /// If you want to use a reference to the value inside of a function, look into `Pointer::with_ref`.
     pub fn as_const(&self) -> Rc<Value> {
         match self {
             Self::ConstConst(val) => val.clone(),
@@ -164,6 +168,7 @@ impl Pointer {
         }
     }
 
+    /// Convert to a mutable reference to a value. If `self` is value-const, clones the internal value
     pub fn as_var(&self) -> RcMut<Value> {
         match self {
             Self::ConstConst(val) => rc_mut_new(val.as_ref().clone()),
@@ -173,6 +178,7 @@ impl Pointer {
         }
     }
 
+    /// Run a function on a reference to the internal value. This does not clone the internal value.
     pub fn with_ref<T, F: FnOnce(&Value) -> T>(&self, func: F) -> T {
         match self {
             Self::ConstConst(val) => func(val.as_ref()),
@@ -182,6 +188,7 @@ impl Pointer {
         }
     }
 
+    /// Run a function on a pair of references to two different Pointers.
     pub fn with_refs<T, F: FnOnce(&Value, &Value) -> T>(&self, other: &Pointer, func: F) -> T {
         self.with_ref(|val| other.with_ref(|other| func(val, other)))
     }
@@ -189,7 +196,7 @@ impl Pointer {
 
 impl PartialEq<Value> for Pointer {
     fn eq(&self, other: &Value) -> bool {
-        *self.as_const() == other.clone()
+        self.with_ref(|r| r == other)
     }
 }
 
@@ -272,7 +279,7 @@ impl Div for Pointer {
     type Output = Self;
 
     fn div(self, rhs: Self) -> Self::Output {
-        Self::from(self.with_refs(&rhs, |lhs, rhs| lhs.clone() / rhs.clone()))
+        Self::from(self.clone_inner() / rhs.clone_inner())
     }
 }
 

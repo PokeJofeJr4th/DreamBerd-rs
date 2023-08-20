@@ -53,9 +53,9 @@ fn inner_interpret(src: &Syntax, state: RcMut<State>) -> SResult<Pointer> {
             let mut string_buf = String::new();
             for segment in str {
                 match segment {
-                    StringSegment::Ident(ident) => string_buf.push_str(
-                        &inner_interpret(&Syntax::Ident(ident.clone()), state.clone())?.to_string(),
-                    ),
+                    StringSegment::Ident(ident) => {
+                        string_buf.push_str(&state.borrow_mut().get(ident.clone()).to_string())
+                    }
                     StringSegment::String(str) => string_buf.push_str(str),
                 }
             }
@@ -108,7 +108,7 @@ fn interpret_operation(
         Operation::Mul => Ok(lhs_eval * rhs_eval),
         Operation::Div => Ok(lhs_eval / rhs_eval),
         Operation::Mod => Ok(lhs_eval % rhs_eval),
-        Operation::Dot => lhs_eval.dot(rhs_eval.clone_inner()),
+        Operation::Dot => rhs_eval.with_ref(|rhs_eval| lhs_eval.dot(rhs_eval)),
         Operation::And => Ok(lhs_eval & rhs_eval),
         Operation::Or => Ok(lhs_eval | rhs_eval),
         Operation::AddEq => {
