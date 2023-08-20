@@ -140,68 +140,68 @@ fn interpret_operation(
 }
 
 fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> SResult<Pointer> {
-    let func_eval = (*func.as_const()).clone();
-    match func_eval {
-        Value::Keyword(Keyword::If) => {
-            let [condition, body] = args else {
-                    return Err(String::from("If statement requires two arguments: condition and body"))
-                };
-            let condition_evaluated = inner_interpret(condition, state.clone())?;
-            // println!("{condition_evaluated:?}");
-            if condition_evaluated == Value::from(true) {
-                inner_interpret(body, state)
-            } else {
+    func.with_ref(|func_eval|
+        match func_eval {
+            Value::Keyword(Keyword::If) => {
+                let [condition, body] = args else {
+                        return Err(String::from("If statement requires two arguments: condition and body"))
+                    };
+                let condition_evaluated = inner_interpret(condition, state.clone())?;
+                // println!("{condition_evaluated:?}");
+                if condition_evaluated == Value::from(true) {
+                    inner_interpret(body, state)
+                } else {
+                    Ok(Value::Undefined.into())
+                }
+            }
+            Value::Keyword(Keyword::Delete) => {
+                if let [Syntax::Ident(key)] = args {
+                    state.borrow_mut().delete(key.clone());
+                }
                 Ok(Value::Undefined.into())
             }
-        }
-        Value::Keyword(Keyword::Delete) => {
-            if let [Syntax::Ident(key)] = args {
-                state.borrow_mut().delete(key.clone());
-            }
-            Ok(Value::Undefined.into())
-        }
-        Value::Keyword(Keyword::Function) => {
-            let [Syntax::Ident(name), args, body] = args else {
-                    return Err(format!("Invalid arguments for `function`: `{args:?}`; expected name, args, and body"))
+            Value::Keyword(Keyword::Function) => {
+                let [Syntax::Ident(name), args, body] = args else {
+                        return Err(format!("Invalid arguments for `function`: `{args:?}`; expected name, args, and body"))
+                    };
+                let args = match args {
+                    Syntax::Block(args) => args.clone(),
+                    other => vec![other.clone()],
                 };
-            let args = match args {
-                Syntax::Block(args) => args.clone(),
-                other => vec![other.clone()],
-            };
-            let args: Vec<Rc<str>> = args
-                .into_iter()
-                .map(|syn| match syn {
-                    Syntax::Ident(str) => Ok(str),
-                    other => Err(format!("Invalid parameter name: `{other:?}`")),
-                })
-                .collect::<Result<_, _>>()?;
-            let inner_val = Value::Function(args, body.clone());
-            state
-                .borrow_mut()
-                .insert(name.clone(), Pointer::from(inner_val));
-            Ok(Value::Undefined.into())
-        }
-        Value::Object(obj) => {
-            let Some(call) = obj.get(&"call".into()) else {
-                return Err(format!("`Object({obj:?})` is not a function"))
-            };
-            let mut new_state = State::from_parent(state);
-            new_state.insert("self".into(), func.clone());
-            interpret_function(call, args, rc_mut_new(new_state))
-        }
-        Value::Function(fn_args, body) => {
-            let mut inner_state = State::from_parent(state.clone());
-            for (idx, ident) in fn_args.iter().enumerate() {
-                let arg_eval = if let Some(syn) = args.get(idx) {
-                    inner_interpret(syn, state.clone())?
-                } else {
-                    Pointer::from(Value::Undefined)
-                };
-                inner_state.insert(ident.clone(), arg_eval);
+                let args: Vec<Rc<str>> = args
+                    .into_iter()
+                    .map(|syn| match syn {
+                        Syntax::Ident(str) => Ok(str),
+                        other => Err(format!("Invalid parameter name: `{other:?}`")),
+                    })
+                    .collect::<Result<_, _>>()?;
+                let inner_val = Value::Function(args, body.clone());
+                state
+                    .borrow_mut()
+                    .insert(name.clone(), Pointer::from(inner_val));
+                Ok(Value::Undefined.into())
             }
-            inner_interpret(&body, rc_mut_new(inner_state))
+            Value::Object(obj) => {
+                let Some(call) = obj.get(&"call".into()) else {
+                    return Err(format!("`Object({obj:?})` is not a function"))
+                };
+                let mut new_state = State::from_parent(state);
+                new_state.insert("self".into(), func.clone());
+                interpret_function(call, args, rc_mut_new(new_state))
+            }
+            Value::Function(fn_args, body) => {
+                let mut inner_state = State::from_parent(state.clone());
+                for (idx, ident) in fn_args.iter().enumerate() {
+                    let arg_eval = if let Some(syn) = args.get(idx) {
+                        inner_interpret(syn, state.clone())?
+                    } else {
+                        Pointer::from(Value::Undefined)
+                    };
+                    inner_state.insert(ident.clone(), arg_eval);
+                }
+                inner_interpret(&body, rc_mut_new(inner_state))
+            }
+            other => Err(format!("`{other:?}` is not a function")),
         }
-
-        other => Err(format!("`{other:?}` is not a function")),
-    }
+    )
 }

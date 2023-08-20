@@ -173,7 +173,7 @@ impl Pointer {
         }
     }
 
-    pub fn with_ref<T, F: Fn(&Value) -> T>(&self, func: F) -> T {
+    pub fn with_ref<T, F: FnOnce(&Value) -> T>(&self, func: F) -> T {
         match self {
             Self::ConstConst(val) => func(val.as_ref()),
             Self::VarConst(val) => func(val.borrow().as_ref()),
@@ -182,7 +182,7 @@ impl Pointer {
         }
     }
 
-    pub fn with_refs<T, F: Fn(&Value, &Value) -> T>(&self, other: &Pointer, func: F) -> T {
+    pub fn with_refs<T, F: FnOnce(&Value, &Value) -> T>(&self, other: &Pointer, func: F) -> T {
         self.with_ref(|val| other.with_ref(|other| func(val, other)))
     }
 }
