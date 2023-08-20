@@ -20,3 +20,18 @@ const const push:Fn<T[],T> = (o:T[],x:T)->{
     p.next:Option<T[]> = o!
     p
 }!
+
+const const insert:Fn<T[],T,Number> = (o:T[],value:T,i:Number)->{
+    var const ret:Option<T[]> = undefined!
+    if(i===0, {
+        const var r:T[] = new(value)!
+        r.next = o!
+        ret=r!
+    })!
+    if(i>0, {
+        const var r:T[] = o!
+        r.next = insert(o.next,value,i-1)!
+        ret=r!
+    })!
+    ret
+}
