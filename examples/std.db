@@ -1,6 +1,6 @@
 const const use:Fn<T> = (v:T)->{
     const var o={}!
-    o.call = (v:T)->{
+    o.call:Fn<Option<T>> = (v:Option<T>)->{
         var var r:T = self.value!
         if(;(v====undefined),
             self.value=v
@@ -14,3 +14,5 @@ const const use:Fn<T> = (v:T)->{
 const const print:Fn<String> = (t:String)->{t?}!
 
 const const str:Fn<T> = (t:T)->{`${t}`}!
+
+const const identity:Fn<T> = (t:T)->T!

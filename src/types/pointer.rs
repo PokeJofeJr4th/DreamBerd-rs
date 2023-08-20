@@ -107,7 +107,7 @@ impl Pointer {
                 _ => false,
             })
         } else {
-            Self::from(self.clone_inner().eq(rhs.clone_inner(), precision))
+            Self::from(self.with_refs(rhs, |val, rhs| val.eq(rhs, precision)))
         }
     }
 
@@ -172,6 +172,19 @@ impl Pointer {
             Self::VarVar(val) => val.borrow().clone(),
         }
     }
+
+    pub fn with_ref<T, F: Fn(&Value) -> T>(&self, func: F) -> T {
+        match self {
+            Self::ConstConst(val) => func(val.as_ref()),
+            Self::VarConst(val) => func(val.borrow().as_ref()),
+            Self::ConstVar(val) => func(&*val.borrow()),
+            Self::VarVar(val) => func(&*val.borrow().borrow()),
+        }
+    }
+
+    pub fn with_refs<T, F: Fn(&Value, &Value) -> T>(&self, other: &Pointer, func: F) -> T {
+        self.with_ref(|val| other.with_ref(|other| func(val, other)))
+    }
 }
 
 impl PartialEq<Value> for Pointer {
@@ -182,7 +195,7 @@ impl PartialEq<Value> for Pointer {
 
 impl PartialOrd for Pointer {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.clone_inner().partial_cmp(&other.clone_inner())
+        self.with_refs(other, |val, other| val.partial_cmp(other))
     }
 }
 
@@ -259,7 +272,7 @@ impl Div for Pointer {
     type Output = Self;
 
     fn div(self, rhs: Self) -> Self::Output {
-        Self::from(self.clone_inner() / rhs.clone_inner())
+        Self::from(self.with_refs(&rhs, |lhs, rhs| lhs.clone() / rhs.clone()))
     }
 }
 

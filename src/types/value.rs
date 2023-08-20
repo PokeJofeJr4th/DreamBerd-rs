@@ -265,13 +265,13 @@ impl BitOr for Value {
 }
 
 impl Value {
-    pub fn eq(&self, rhs: Self, precision: u8) -> Self {
+    pub fn eq(&self, rhs: &Self, precision: u8) -> Self {
         if precision <= 2 && self.bool() == Boolean::False && rhs.bool() == Boolean::False {
             return Self::from(true);
         }
         // true == `aaa`
         if precision == 1 {
-            if let (&Self::Boolean(bool), rhs) | (rhs, &Self::Boolean(bool)) = (self, &rhs) {
+            if let (&Self::Boolean(bool), rhs) | (rhs, &Self::Boolean(bool)) = (self, rhs) {
                 if rhs.bool() == bool {
                     return Self::from(true);
                 }
@@ -285,12 +285,12 @@ impl Value {
             return Self::from(true);
         }
         match (self, rhs) {
-            (&Self::Number(lhs), Self::Number(rhs)) => {
+            (&Self::Number(lhs), &Self::Number(rhs)) => {
                 Self::from(lhs == rhs || (precision == 1 && (lhs / rhs).ln().abs() < 0.1))
             }
-            (Self::String(lhs), Self::String(rhs)) => Self::from(*lhs == rhs),
-            (&Self::Keyword(lhs), Self::Keyword(rhs)) => Self::from(lhs == rhs),
-            (Self::String(ref str), Self::Number(num))
+            (Self::String(lhs), Self::String(rhs)) => Self::from(*lhs == *rhs),
+            (&Self::Keyword(lhs), Self::Keyword(rhs)) => Self::from(lhs == *rhs),
+            (Self::String(ref str), &Self::Number(num))
             | (&Self::Number(num), Self::String(ref str)) => {
                 let Ok(str_parse) = str.parse::<f64>() else {
                     return Self::from(false)
@@ -377,8 +377,6 @@ pub enum Keyword {
     Delete,
     Function,
     If,
-    Use,
-    UseInner,
 }
 
 impl Display for Keyword {
@@ -389,8 +387,6 @@ impl Display for Keyword {
             Self::Delete => write!(f, "delete"),
             Self::Function => write!(f, "function"),
             Self::If => write!(f, "if"),
-            Self::Use => write!(f, "use"),
-            Self::UseInner => write!(f, "use(inner)"),
         }
     }
 }

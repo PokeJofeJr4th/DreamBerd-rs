@@ -1,0 +1,19 @@
+const const new:Fn<T> = (item:T)->{
+    const var o:T[]={}!
+    o.call:Fn = ()->{
+        self.value
+    }!
+    o.value:T = item!
+    o.next:Option<T[]> = undefined!
+    o
+}!
+
+const const index:Fn<T[],Number> = (o:T[],i:Number)->{
+    if(;(number===0),index(o.next,i-1))
+}!
+
+const const push:Fn<T[],T> = (o:T[],x:T)->{
+    const var p:List<T> = new(x)!
+    p.next:Option<T[]> = o!
+    p
+}!

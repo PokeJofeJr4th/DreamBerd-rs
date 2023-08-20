@@ -32,11 +32,11 @@ fn divide() {
 #[test]
 fn eq() {
     assert_eq!(
-        Value::from(f64::PI).eq(Value::from(3.0), 1),
+        Value::from(f64::PI).eq(&Value::from(3.0), 1),
         Value::from(true)
     );
     assert_eq!(
-        Value::from(f64::PI).eq(Value::from(3.0), 2),
+        Value::from(f64::PI).eq(&Value::from(3.0), 2),
         Value::from(false)
     );
 }

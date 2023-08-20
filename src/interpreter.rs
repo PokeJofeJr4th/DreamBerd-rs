@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, rc::Rc};
+use std::rc::Rc;
 
 use crate::types::prelude::*;
 
@@ -180,17 +180,6 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                 .borrow_mut()
                 .insert(name.clone(), Pointer::from(inner_val));
             Ok(Value::Undefined.into())
-        }
-        Value::Keyword(Keyword::Use) => {
-            let [value] = args else {
-                return Err(String::from("Invalid arguments for `use`; expected value"))
-            };
-            let evaluated = inner_interpret(value, state)?;
-            Ok(Value::Object(BTreeMap::from([
-                ("value".into(), evaluated),
-                ("call".into(), Value::Keyword(Keyword::UseInner).into()),
-            ]))
-            .into())
         }
         Value::Object(obj) => {
             let Some(call) = obj.get(&"call".into()) else {
