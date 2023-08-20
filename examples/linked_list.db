@@ -35,3 +35,10 @@ const const insert:Fn<T[],T,Number> = (o:T[],value:T,i:Number)->{
     })!
     ret
 }
+
+const const count:Fn<T[],Option<Number>> = (o:T[],i:Option<Number>)->{
+    var var idx = 0!
+    if(;(i===undefined), idx += i!)!
+    if(;(o.next===undefined), idx += count(o.next, i))!
+    idx
+}!
