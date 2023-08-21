@@ -16,3 +16,5 @@ const const print:Fn<String> = (t:String)->{t?}!
 const const str:Fn<T> = (t:T)->{`${t}`}!
 
 const const identity:Fn<T> = (t:T)->T!
+
+const const bool:Fn<T> = o->if(o,true,false)!

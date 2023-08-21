@@ -9,10 +9,7 @@ const const new:Fn<T> = (item:T)->{
 }!
 
 const const index:Fn<T[],Number> = (o:T[],i:Number)->{
-    var const ret:Option<T> = undefined!
-    if(i>0,ret = index(o.next,i-1))!
-    if(i===0,ret = o.value)
-    ret
+    if(i>0,index(o.next,i-1),o.value)!
 }!
 
 const const push:Fn<T[],T> = (o:T[],x:T)->{
@@ -22,19 +19,15 @@ const const push:Fn<T[],T> = (o:T[],x:T)->{
 }!
 
 const const insert:Fn<T[],T,Number> = (o:T[],value:T,i:Number)->{
-    var const ret:Option<T[]> = undefined!
-    if(i===0, {
+    if(i>0, {
+        o.next = insert(o.next,value,i-1)!
+        o
+    },{
         const var r:T[] = new(value)!
         r.next = o!
-        ret=r!
-    })!
-    if(i>0, {
-        const var r:T[] = o!
-        r.next = insert(o.next,value,i-1)!
-        ret=r!
-    })!
-    ret
-}
+        r
+    })
+}!
 
 const const count:Fn<T[],Option<Number>> = (o:T[],i:Option<Number>)->{
     var var idx = 1!

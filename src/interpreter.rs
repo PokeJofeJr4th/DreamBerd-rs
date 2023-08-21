@@ -143,15 +143,18 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
     func.with_ref(|func_eval|
         match func_eval {
             Value::Keyword(Keyword::If) => {
-                let [condition, body] = args else {
+                let [condition, body, ..] = args else {
                         return Err(String::from("If statement requires two arguments: condition and body"))
                     };
                 let condition_evaluated = inner_interpret(condition, state.clone())?;
                 // println!("{condition_evaluated:?}");
-                if condition_evaluated == Value::from(true) {
+                if condition_evaluated.with_ref(Value::bool) == Boolean::True {
                     inner_interpret(body, state)
                 } else {
-                    Ok(Value::Undefined.into())
+                    match args.get(2) {
+                        Some(else_statement) => inner_interpret(else_statement, state),
+                        None => Ok(Value::Undefined.into()),
+                    }
                 }
             }
             Value::Keyword(Keyword::Delete) => {
