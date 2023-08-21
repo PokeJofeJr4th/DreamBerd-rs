@@ -1,0 +1,73 @@
+{
+  "highlight.regexFlags": "gi",
+  "highlight.regexes": {
+    "const (const|var) +(var|(?!\\1)const)": {
+      "filterFileRegex": ".*\\.db",
+      "decorations": [
+        {
+          "backgroundColor": "#ff4346", // this is to highlight an invalid usage of const const const
+          "color": "#1f1f1f"
+        },
+        {}
+      ]
+    },
+    "(const|var)( +)(const|var)( +)([^ +\\-\\*\\/<>=\\(\\)\\[\\]!;:\\.{}\n,]+)(:?)(([\\w<>\\[\\],]+?))?( *)([+\\-\\/*]?)(= *)([^!\n?]+)": {
+      "filterFileRegex": ".*\\.db",
+      "decorations": [
+        {
+          "color": "#66cc80" // first const
+        },
+        {},
+        {
+          "color": "#6680cc" // second const
+        },
+        {},
+        {
+          "color": "#ff8046" // variable name
+        },
+        {},
+        {
+          "color": "#ffa0de" //lifetime
+        }
+      ]
+    },
+    "([\"'`])(.*)(\\1)": {
+      "filterFileRegex": ".*\\.db",
+      "decorations": [
+        {
+          "color": "#228840"
+        },
+        {
+          "color": "#228840"
+        },
+        {
+          "color": "#228840"
+        }
+      ]
+    },
+    "([^ +\\-\\*\\/<>=\\(\\)\\[\\]!;:\\.{}\n,\"]+)(:)([\\w<>\\[\\],]+)(,|\\))": {
+      "filterFileRegex": ".*\\.db",
+      "decorations": [{ "color": "#ff8046" }, {}, { "color": "#ffa0de" }]
+    },
+    "([^ +\\-\\*\\/<>=\\(\\)\\[\\]!;:\\.{}\n,]+)(\\.)([^ +\\-\\*\\/<>=\\(\\)\\[\\]!;:\\.{}\n,]+)\\s*": {
+      "filterFileRegex": ".*\\.db",
+      "decorations": [
+        {
+          "color": "#6680cc" // object name
+        },
+        {},
+        {
+          "color": "#66cc80" // variable name
+        }
+      ]
+    },
+    "(true|false|maybe|undefined|self)": {
+      "filterFileRegex": ".*\\.db",
+      "decorations": [
+        {
+          "color": "#eeaa46"
+        }
+      ]
+    }
+  }
+}
