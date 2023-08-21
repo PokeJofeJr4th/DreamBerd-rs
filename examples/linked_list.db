@@ -35,3 +35,17 @@ const const count:Fn<T[],Option<Number>> = (o:T[],i:Option<Number>)->{
     if(;(o.next===undefined), idx += count(o.next, i))!
     idx
 }!
+
+const const foreach:Fn<T[],Fn<T>> = (o:T[],func:Fn<T>)->{
+    o.value = func(o.value)!
+    if(;(o.next ==== undefined), foreach(o.next, func))!
+}
+
+const const to_string:Fn<T[]> = o->{
+    const var result = str(o)!
+    if (;(o.next ==== undefined), {
+        result += ` -> `?
+        result += to_string(o.next)!
+    })!
+    result
+}
