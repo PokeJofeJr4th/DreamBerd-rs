@@ -8,7 +8,7 @@ The full specification for Dreamberd is available at https://github.com/TodePond
 
 Every statement ends with an exclamation mark! If you're feeling extra, you can even use multiple!!!
 
-```java
+```js
 print("Hello World!")!
 
 print("Hi!!")!!!!
@@ -16,7 +16,7 @@ print("Hi!!")!!!!
 
 If you're unsure, that's okay too! You can also use question marks? This will print debug information to the console? The more question marks, the more detailed the information?
 
-```java
+```js
 print("uh... hi??")???
 ```
 
@@ -24,7 +24,7 @@ print("uh... hi??")???
 
 You might be wondering what DreamBerd uses for its negation operator, since most languages use `!`. Don't worry! `;` and `-` both negate the value in front of them.
 
-```java
+```js
 ;"hello there"? // "ereht olleh"
 -true? // false
 ;1 // -1
@@ -35,7 +35,7 @@ You might be wondering what DreamBerd uses for its negation operator, since most
 
 There are four types of declarations. Constant constants can't be changed at all.
 
-```java
+```js
 const const name = "Ava"!
 name += "?"! // does nothing
 name = "John"! // does nothing
@@ -43,7 +43,7 @@ name = "John"! // does nothing
 
 Constant variables can be edited but not reassigned.
 
-```java
+```js
 const var age = 1!
 age += 1!
 age? // 2
@@ -51,7 +51,7 @@ age? // 2
 
 Variable constants can be reassigned but not edited.
 
-```java
+```js
 var const id = "main"!
 id = "no thank you"!
 id? // "no thank you"
@@ -59,7 +59,7 @@ id? // "no thank you"
 
 Variable variables can be reassigned and edited.
 
-```java
+```js
 var var count = 0!
 count += 1!
 count = 2!
@@ -69,7 +69,7 @@ count = 2!
 
 DreamBerd is a weakly-typed language. However, type annotations can be added to declarations and functions.
 
-```java
+```js
 var const name: String = "Gary"!
 const var age: i32 = 22!
 
@@ -86,7 +86,7 @@ const const mul: Fn<i32, i32> = (lhs: i32, rhs: i32)->{
 
 Both variables and constants can be named with any Unicode character or string that isn't interpreted as another feature.
 
-```java
+```js
 const const firstAlphabetLetter = 'A'!
 var const 👍 = true!
 var var 1️⃣ = 1!
@@ -94,7 +94,7 @@ var var 1️⃣ = 1!
 
 This includes numbers, and other language constructs.
 
-```java
+```js
 const const 5 = 4!
 const const true = false!
 2 + 2 ==== 5? // true
@@ -115,7 +115,7 @@ Numbers between 0 and 1, numbers that are not a number, keywords, functions, and
 
 Strings can be declared with backticks, single quotes, double quotes, zero quotes, or even french quotes!
 
-```java
+```js
 const const name: String = `Jeremy`!
 const const name: String = 'Lu'!
 const const name: String = "Luke"!
@@ -127,7 +127,7 @@ const const name: String = «antoine»!
 
 Please remember to use your regional currency when interpolating strings.
 
-```java
+```js
 const const name: String = "world"!
 print("Hello ${name}!")!
 print("Hello £{name}!")!
@@ -136,7 +136,7 @@ print("Hello ¥{name}!")!
 
 And make sure to follow your local typographical norms
 
-```java
+```js
 print("Hello {name}€")!
 ```
 
@@ -144,20 +144,20 @@ print("Hello {name}€")!
 
 DreamBerd has significant whitespace. Use spacing to specify the order of arithmetic operations.
 
-```java
+```js
 1 + 2*3? // 7
 1+2 * 3? // 9
 ```
 
 For operations with the same amount of whitespace, grouping is poorly defined.
 
-```java
+```js
 1+1*1+1? // 4
 ```
 
 You can add strings together and multiply them by numbers. Negating a string reverses it.
 
-```java
+```js
 "he" + "l"*2 "o" + " " + "world"? // "hello world"
 "johnny"*1.5? // "johnnyjoh"
 "no lemon " + -"no lemon"? // "no lemon nomel on"
@@ -167,7 +167,7 @@ You can add strings together and multiply them by numbers. Negating a string rev
 
 Dividing by zero returns undefined.
 
-```java
+```js
 3 / 0? // undefined
 ```
 
@@ -177,19 +177,19 @@ JavaScript lets you do different levels of comparison. `==` for loose comparison
 
 You can use `===` to do a loose check.
 
-```java
+```js
 3.14 === "3.14"? // true
 ```
 
 You can use `====` to do a more precise check.
 
-```java
+```js
 3.14 ==== "3.14"? // false
 ```
 
 You can use `=====` to be EVEN MORE precise!
 
-```java
+```js
 const const pi = 3.14!
 pi ===== pi? // true
 3.14 ===== 3.14? // false (this differs from the official DreamBerd specification)
@@ -198,7 +198,7 @@ pi ===== pi? // true
 
 Finally, if you want to be much less precise, you can use `==`.
 
-```java
+```js
 3 == 3.14? // true
 🥧 == 22/7? // true
 ```
@@ -207,7 +207,7 @@ Finally, if you want to be much less precise, you can use `==`.
 
 To declare a function, you can use any letters from the word function (as long as they're in order):
 
-```java
+```js
 function(add, (a, b),  (a + b))!
 func(multiply, (a, b), (a * b))!
 fun(subtract, (a, b), (a - b))!
@@ -218,7 +218,7 @@ union(inverse, (a), (1/a))!
 
 Alternatively, you can use the arrow syntax
 
-```java
+```js
 const const does_she_really_like_you = ()->{maybe}!
 ```
 
@@ -226,14 +226,14 @@ const const does_she_really_like_you = ()->{maybe}!
 
 To avoid confusion, the delete statement only works with identifiers like variables, numbers, strings, and booleans.
 
-```java
+```js
 delete(3)!
 2+1 === 3? // false
 ```
 
 DreamBerd is a multi-paradigm programming language, which means that you can delete the keywords and paradigms you don't like.
 
-```java
+```js
 delete(maybe)!!!
 const const is_raining = maybe!
 is_raining? // undefined
@@ -241,7 +241,7 @@ is_raining? // undefined
 
 When perfection is achieved and there is nothing left to delete, you can do this:
 
-```java
+```js
 delete(delete)!
 ```
 
@@ -249,14 +249,14 @@ delete(delete)!
 
 To create an object, start with the empty object and add values to it.
 
-```java
+```js
 const var my_object = {}!
 my_object.name = "Samuel"!
 ```
 
 You can also set the `call` keyword to a function, which can use the `self` keyword to access attributes of the class.
 
-```java
+```js
 my_object.call = ()->{"hello, my name is "+self.name?}!
 ```
 
@@ -268,13 +268,13 @@ Lots of popular languages use so-called "zero-cost abstractions". DreamBerd inst
 
 To use a signal, use `use`.
 
-```java
+```js
 const var score = use(0)!
 ```
 
 In DreamBerd, you can set (and get) signals with just one function:
 
-```java
+```js
 const var score = use(0)!
 
 score(9)! // Set the value
@@ -285,7 +285,7 @@ score()? // Get the value (and print it)
 
 Dreamberd has a fast-growing standard library. Due to the limitations of the file system, it must be copied and pasted into every file that uses it.
 
-```java
+```js
 const const use: Fn<T> = (v: T) -> {
     var var o = {}!
     o.call = (v: T)->{
