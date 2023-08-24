@@ -111,6 +111,28 @@ Numbers less than or equal to zero, empty strings, empty objects, undefined, and
 
 Numbers between 0 and 1, numbers that are not a number, keywords, functions, and `maybe` are maybeyey.
 
+## Control Flow
+
+DreamBerd has a simple `if` statement:
+
+```js
+if(true ===== false,
+    print("true is false"),
+    print("true is not false"),
+    print("true might be false")
+)!
+```
+
+Notice, the if statement includes a section for if the discriminating variable is `maybe`.
+
+This is actually a function, so it can be assigned:
+
+```js
+const const the_if_statement = if!
+
+the_if_statement(true ==== false, print("true is false"))!
+```
+
 ## Strings
 
 Strings can be declared with backticks, single quotes, double quotes, zero quotes, or even french quotes!
