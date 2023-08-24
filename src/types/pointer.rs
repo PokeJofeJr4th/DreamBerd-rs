@@ -122,7 +122,7 @@ impl Pointer {
                     |e| format!("Error parsing `{lhs}.{rhs}`: {e}"),
                 )?))
             }
-            (Value::Object(mut obj), key) => match obj.get(&key) {
+            (Value::Object(mut obj), key) => match obj.get(key) {
                 Some(ptr) => Ok(ptr.clone()),
                 None => {
                     let val = if allow_modify {
@@ -183,13 +183,13 @@ impl Pointer {
         match self {
             Self::ConstConst(val) => func(val.as_ref()),
             Self::VarConst(val) => func(val.borrow().as_ref()),
-            Self::ConstVar(val) => func(&*val.borrow()),
-            Self::VarVar(val) => func(&*val.borrow().borrow()),
+            Self::ConstVar(val) => func(&val.borrow()),
+            Self::VarVar(val) => func(&val.borrow().borrow()),
         }
     }
 
     /// Run a function on a pair of references to two different Pointers.
-    pub fn with_refs<T, F: FnOnce(&Value, &Value) -> T>(&self, other: &Pointer, func: F) -> T {
+    pub fn with_refs<T, F: FnOnce(&Value, &Value) -> T>(&self, other: &Self, func: F) -> T {
         self.with_ref(|val| other.with_ref(|other| func(val, other)))
     }
 }
@@ -202,7 +202,7 @@ impl PartialEq<Value> for Pointer {
 
 impl PartialOrd for Pointer {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.with_refs(other, |val, other| val.partial_cmp(other))
+        self.with_refs(other, std::cmp::PartialOrd::partial_cmp)
     }
 }
 

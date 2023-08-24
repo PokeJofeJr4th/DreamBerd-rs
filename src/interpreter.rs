@@ -54,7 +54,7 @@ fn inner_interpret(src: &Syntax, state: RcMut<State>) -> SResult<Pointer> {
             for segment in str {
                 match segment {
                     StringSegment::Ident(ident) => {
-                        string_buf.push_str(&state.borrow_mut().get(ident.clone()).to_string())
+                        string_buf.push_str(&state.borrow_mut().get(ident.clone()).to_string());
                     }
                     StringSegment::String(str) => string_buf.push_str(str),
                 }
@@ -151,10 +151,7 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                 if condition_evaluated.with_ref(Value::bool) == Boolean::True {
                     inner_interpret(body, state)
                 } else {
-                    match args.get(2) {
-                        Some(else_statement) => inner_interpret(else_statement, state),
-                        None => Ok(Value::Undefined.into()),
-                    }
+                    args.get(2).map_or_else(|| Ok(Value::Undefined.into()), |else_statement| inner_interpret(else_statement, state))
                 }
             }
             Value::Keyword(Keyword::Delete) => {
@@ -202,7 +199,7 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                     };
                     inner_state.insert(ident.clone(), arg_eval);
                 }
-                inner_interpret(&body, rc_mut_new(inner_state))
+                inner_interpret(body, rc_mut_new(inner_state))
             }
             other => Err(format!("`{other:?}` is not a function")),
         }
