@@ -148,10 +148,11 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                     };
                 let condition_evaluated = inner_interpret(condition, state.clone())?;
                 // println!("{condition_evaluated:?}");
-                if condition_evaluated.with_ref(Value::bool) == Boolean::True {
+                let bool = condition_evaluated.with_ref(Value::bool) ;
+                if bool == Boolean::True {
                     inner_interpret(body, state)
-                } else {
-                    args.get(2).map_or_else(|| Ok(Value::Undefined.into()), |else_statement| inner_interpret(else_statement, state))
+                } else if let (Boolean::Maybe, Some(body)) = (bool, args.get(3)) {inner_interpret(body, state)} else { 
+                    args.get(2).map_or(Ok(Value::Undefined.into()), |else_statement| inner_interpret(else_statement, state))
                 }
             }
             Value::Keyword(Keyword::Delete) => {
