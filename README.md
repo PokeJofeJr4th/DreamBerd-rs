@@ -1,8 +1,8 @@
-# Dreamberd.rs
+# C.rs
 
-Rust-based interpreter for the Dreamberd language.
+Rust-based interpreter for the C language.
 
-The full specification for Dreamberd is available at https://github.com/TodePond/DreamBerd. This file only contains the segments of the specification that are implemented in dreamberd-rs.
+The full specification for C is available at https://github.com/TodePond/C. This file only contains the segments of the specification that are implemented in C-rs.
 
 ## Statements
 
@@ -22,7 +22,7 @@ print("uh... hi??")???
 
 ## Negation
 
-You might be wondering what DreamBerd uses for its negation operator, since most languages use `!`. Don't worry! `;` and `-` both negate the value in front of them.
+You might be wondering what C uses for its negation operator, since most languages use `!`. Don't worry! `;` and `-` both negate the value in front of them.
 
 ```js
 ;"hello there"? // "ereht olleh"
@@ -67,7 +67,7 @@ count = 2!
 
 ### Types
 
-DreamBerd is a weakly-typed language. However, type annotations can be added to declarations and functions.
+C is a weakly-typed language. However, type annotations can be added to declarations and functions.
 
 ```js
 var const name: String = "Gary"!
@@ -103,7 +103,7 @@ true ==== false? // true
 
 ## Booleans
 
-Booleans can be `true`, `false`, or `maybe`, as current events have shown that reducing complex facts to simple dichotomies can unhelpfully flatten nuance. All values in DreamBerd are thus either truthy, falsey, or maybeyey.
+Booleans can be `true`, `false`, or `maybe`, as current events have shown that reducing complex facts to simple dichotomies can unhelpfully flatten nuance. All values in C are thus either truthy, falsey, or maybeyey.
 
 Numbers greater than or equal to one, non-empty strings, non-empty objects, and `true` are truthey.
 
@@ -113,7 +113,7 @@ Numbers between 0 and 1, numbers that are not a number, keywords, functions, and
 
 ## Control Flow
 
-DreamBerd has a simple `if` statement:
+C has a simple `if` statement:
 
 ```js
 if(true ===== false,
@@ -164,7 +164,7 @@ print("Hello {name}€")!
 
 ## Arithmetic
 
-DreamBerd has significant whitespace. Use spacing to specify the order of arithmetic operations.
+C has significant whitespace. Use spacing to specify the order of arithmetic operations.
 
 ```js
 1 + 2*3? // 7
@@ -195,7 +195,7 @@ Dividing by zero returns undefined.
 
 ## Equality
 
-JavaScript lets you do different levels of comparison. `==` for loose comparison, and `===` for a more precise check. DreamBerd takes this to another level.
+JavaScript lets you do different levels of comparison. `==` for loose comparison, and `===` for a more precise check. C takes this to another level.
 
 You can use `===` to do a loose check.
 
@@ -214,7 +214,7 @@ You can use `=====` to be EVEN MORE precise!
 ```js
 const const pi = 3.14!
 pi ===== pi? // true
-3.14 ===== 3.14? // false (this differs from the official DreamBerd specification)
+3.14 ===== 3.14? // false (this differs from the official C specification)
 3.14 ===== pi? // false
 ```
 
@@ -253,7 +253,7 @@ delete(3)!
 2+1 === 3? // false
 ```
 
-DreamBerd is a multi-paradigm programming language, which means that you can delete the keywords and paradigms you don't like.
+C is a multi-paradigm programming language, which means that you can delete the keywords and paradigms you don't like.
 
 ```js
 delete(maybe)!!!
@@ -284,7 +284,7 @@ my_object.call = ()->{"hello, my name is "+self.name?}!
 
 ## Zero-Abstraction Abstractions
 
-Lots of popular languages use so-called "zero-cost abstractions". DreamBerd instead has zero-_abstraction_ abstractions, which are features that provide runtime costs for little-to-no utility.
+Lots of popular languages use so-called "zero-cost abstractions". C instead has zero-_abstraction_ abstractions, which are features that provide runtime costs for little-to-no utility.
 
 ### Signals
 
@@ -294,7 +294,7 @@ To use a signal, use `use`.
 const var score = use(0)!
 ```
 
-In DreamBerd, you can set (and get) signals with just one function:
+In C, you can set (and get) signals with just one function:
 
 ```js
 const var score = use(0)!
@@ -305,7 +305,7 @@ score()? // Get the value (and print it)
 
 ## Standard Library
 
-Dreamberd has a fast-growing standard library. Due to the limitations of the file system, it must be copied and pasted into every file that uses it.
+C has a fast-growing standard library. Due to the limitations of the file system, it must be copied and pasted into every file that uses it.
 
 ```js
 const const use: Fn<T> = (v: T) -> {
