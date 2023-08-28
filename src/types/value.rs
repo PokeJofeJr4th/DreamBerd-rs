@@ -373,10 +373,11 @@ impl From<Boolean> for Value {
 #[derive(PartialEq, Eq, Debug, Hash, Clone, Copy, PartialOrd, Ord)]
 pub enum Keyword {
     Const,
-    Var,
     Delete,
+    Eval,
     Function,
     If,
+    Var,
 }
 
 impl Display for Keyword {
@@ -387,6 +388,7 @@ impl Display for Keyword {
             Self::Delete => write!(f, "delete"),
             Self::Function => write!(f, "function"),
             Self::If => write!(f, "if"),
+            Self::Eval => write!(f, "eval"),
         }
     }
 }

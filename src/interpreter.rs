@@ -182,6 +182,12 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                     .insert(name.clone(), Pointer::from(inner_val));
                 Ok(Value::Undefined.into())
             }
+            Value::Keyword(Keyword::Eval) => {
+                let [body] = args else {
+                    return Err(format!("You can only `eval` one thing at a time; got `{args:?}`"));
+                };
+                inner_interpret(&crate::parser::parse(crate::lexer::tokenize(&inner_interpret(body, state.clone())?.to_string())?)?, state)
+            }
             Value::Object(obj) => {
                 let Some(call) = obj.get(&"call".into()) else {
                     return Err(format!("`Object({obj:?})` is not a function"))

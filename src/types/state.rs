@@ -26,6 +26,7 @@ impl State {
         kw!(current "const" => Keyword::Const);
         kw!(current "var" => Keyword::Var);
         kw!(current "if" => Keyword::If);
+        kw!(current "eval" => Keyword::Eval);
         kw!(current "true" => true);
         kw!(current "false" => false);
         kw!(current "maybe" => Boolean::Maybe);

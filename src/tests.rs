@@ -149,3 +149,11 @@ fn string_interpolation() {
         "`Hi, I'm John`"
     );
 }
+
+#[test]
+fn eval_tests() {
+    assert_eq_db!("eval(2)", "2");
+    assert_eq_db!("const var x = 1! x += 2! eval(`x`)", "3");
+    assert_eq_db!("const var x = 1! x += 2! eval(x)", "3");
+    assert_eq_db!("const const x = `'Hello, World!'`! eval(x)", "`Hello, World!`");
+}
