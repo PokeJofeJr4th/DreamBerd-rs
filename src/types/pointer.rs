@@ -126,15 +126,15 @@ impl Pointer {
                 Some(ptr) => Ok(ptr.clone()),
                 None => {
                     let val = if allow_modify {
-                        Self::ConstVar(rc_mut_new(Value::Undefined))
+                        Self::ConstVar(rc_mut_new(Value::empty_object()))
                     } else {
-                        Self::ConstConst(Rc::new(Value::Undefined))
+                        Self::ConstConst(Rc::new(Value::empty_object()))
                     };
                     obj.insert(key.clone(), val.clone());
                     Ok(val)
                 }
             },
-            _ => Ok(Self::from(Value::Undefined)),
+            _ => Ok(Self::from(Value::empty_object())),
         }
     }
 

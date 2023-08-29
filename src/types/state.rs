@@ -30,7 +30,7 @@ impl State {
         kw!(current "true" => true);
         kw!(current "false" => false);
         kw!(current "maybe" => Boolean::Maybe);
-        kw!(current "undefined" => Value::Undefined);
+        kw!(current "undefined" => Value::empty_object());
         kw!(current "infinity" => Value::Number(f64::INFINITY));
         kw!(current "∞" => Value::Number(f64::INFINITY));
         Self {
@@ -79,7 +79,7 @@ impl State {
     pub fn delete(&mut self, k: Rc<str>) {
         if self.current.contains_key(&k) {
             self.current
-                .insert(k.clone(), Pointer::from(Value::Undefined));
+                .insert(k.clone(), Pointer::from(Value::empty_object()));
         }
         if let Some(parent) = &self.parent {
             parent.borrow_mut().delete(k);

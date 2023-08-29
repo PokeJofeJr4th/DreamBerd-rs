@@ -45,14 +45,13 @@ pub enum Value {
     Object(BTreeMap<Value, Pointer>),
     Function(Vec<Rc<str>>, Syntax),
     Keyword(Keyword),
-    Undefined,
 }
 
 impl Eq for Value {}
 
 impl Default for Value {
     fn default() -> Self {
-        Self::Undefined
+        Self::Object(BTreeMap::new())
     }
 }
 
@@ -102,7 +101,6 @@ impl Display for Value {
                 write!(f, "{args:?} -> {body:?}")
             }
             Self::Keyword(kw) => write!(f, "{kw}"),
-            Self::Undefined => write!(f, "undefined"),
         }
     }
 }
@@ -127,7 +125,6 @@ impl Hash for Value {
                 content.hash(state);
             }
             Self::Keyword(keyword) => keyword.hash(state),
-            Self::Undefined => {}
         }
     }
 }
@@ -155,7 +152,7 @@ impl Add for Value {
             (Self::String(lhs), rhs) => {
                 Self::String((String::from(&*lhs) + &rhs.to_string()).into())
             }
-            _ => Self::Undefined,
+            _ => Self::default(),
         }
     }
 }
@@ -165,7 +162,7 @@ impl Sub for Value {
     fn sub(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Self::Number(lhs), Self::Number(rhs)) => Self::Number(lhs - rhs),
-            _ => Self::Undefined,
+            _ => Self::default(),
         }
     }
 }
@@ -191,7 +188,7 @@ impl Mul for Value {
                 }
                 Self::String(str_buf.into())
             }
-            _ => Self::Undefined,
+            _ => Self::default(),
         }
     }
 }
@@ -202,12 +199,12 @@ impl Div for Value {
         match (self, rhs) {
             (Self::Number(lhs), Self::Number(rhs)) => {
                 if rhs == 0.0 {
-                    Self::Undefined
+                    Self::default()
                 } else {
                     Self::Number(lhs / rhs)
                 }
             }
-            _ => Self::Undefined,
+            _ => Self::default(),
         }
     }
 }
@@ -218,12 +215,12 @@ impl Rem for Value {
         match (self, rhs) {
             (Self::Number(lhs), Self::Number(rhs)) => {
                 if rhs == 0.0 {
-                    Self::Undefined
+                    Self::default()
                 } else {
                     Self::Number(lhs % rhs)
                 }
             }
-            _ => Self::Undefined,
+            _ => Self::default(),
         }
     }
 }
@@ -237,7 +234,7 @@ impl Neg for Value {
             Self::Boolean(Boolean::Maybe) => Self::Boolean(Boolean::Maybe),
             Self::Number(num) => Self::Number(-num),
             Self::String(str) => Self::String(str.chars().rev().collect::<String>().into()),
-            _ => Self::Undefined,
+            _ => Self::default(),
         }
     }
 }
@@ -299,7 +296,20 @@ impl Value {
                     num == str_parse || (precision == 1 && (num / str_parse).ln().abs() < 0.1),
                 )
             }
-            (Self::Undefined, Self::Undefined) => Self::from(true),
+            (Self::Object(lhs), Self::Object(rhs)) => Self::from(
+                lhs.iter()
+                    .filter(|(k, v)| match rhs.get(k) {
+                        Some(r) => r.eq(v, precision) == Self::from(false),
+                        None => true,
+                    })
+                    .next()
+                    .is_none()
+                    && rhs
+                        .iter()
+                        .filter(|(k, _)| lhs.get(k).is_none())
+                        .next()
+                        .is_none(),
+            ),
             _ => Self::from(false),
         }
     }
@@ -330,7 +340,6 @@ impl Value {
                     Boolean::True
                 }
             }
-            Self::Undefined => Boolean::False,
             _ => Boolean::Maybe,
         }
     }

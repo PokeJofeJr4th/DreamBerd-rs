@@ -25,7 +25,7 @@ macro_rules! assert_eq_db {
 
 #[test]
 fn divide() {
-    assert_eq!(Value::from(1.0) / Value::from(0.0), Value::Undefined);
+    assert_eq!(Value::from(1.0) / Value::from(0.0), Value::empty_object());
     assert_eq!(Value::from(5.0) / Value::from(2.0), Value::from(2.5));
 }
 

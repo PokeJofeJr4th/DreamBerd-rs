@@ -35,11 +35,7 @@ fn inner_interpret(src: &Syntax, state: RcMut<State>) -> SResult<Pointer> {
                 inner_interpret(syn, state.clone())?;
             }
             let res = inner_interpret(last, state)?;
-            if res == Value::Undefined {
-                Ok(Pointer::from(Value::empty_object()))
-            } else {
                 Ok(res)
-            }
         }
         Syntax::Declare(var_type, ident, value) => {
             let val = inner_interpret(value, state.clone())?;
@@ -47,7 +43,7 @@ fn inner_interpret(src: &Syntax, state: RcMut<State>) -> SResult<Pointer> {
                 .borrow_mut()
                 .insert(ident.clone(), val.convert(*var_type));
             // println!("{state:#?}");
-            Ok(Pointer::from(Value::Undefined))
+            Ok(Pointer::from(Value::empty_object()))
         }
         Syntax::String(str) => {
             let mut string_buf = String::new();
@@ -89,7 +85,7 @@ fn interpret_operation(
             // println!("{val:?}");
             return Ok(val.clone());
         }
-        let ptr = Pointer::from(Value::Undefined).convert(VarType::VarVar);
+        let ptr = Pointer::from(Value::empty_object()).convert(VarType::VarVar);
         // println!("{ptr:?}");
         obj.insert(key, ptr.clone());
         return Ok(ptr);
@@ -154,14 +150,14 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                 } else if let (Boolean::Maybe, Some(body)) = (bool, args.get(3)) {
                     inner_interpret(body, state)
                 } else { 
-                    args.get(2).map_or(Ok(Value::Undefined.into()), |else_statement| inner_interpret(else_statement, state))
+                    args.get(2).map_or(Ok(Value::empty_object().into()), |else_statement| inner_interpret(else_statement, state))
                 }
             }
             Value::Keyword(Keyword::Delete) => {
                 if let [Syntax::Ident(key)] = args {
                     state.borrow_mut().delete(key.clone());
                 }
-                Ok(Value::Undefined.into())
+                Ok(Value::empty_object().into())
             }
             Value::Keyword(Keyword::Function) => {
                 let [Syntax::Ident(name), args, body] = args else {
@@ -182,13 +178,22 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                 state
                     .borrow_mut()
                     .insert(name.clone(), Pointer::from(inner_val));
-                Ok(Value::Undefined.into())
+                Ok(Value::empty_object().into())
             }
             Value::Keyword(Keyword::Eval) => {
                 let [body] = args else {
                     return Err(format!("You can only `eval` one thing at a time; got `{args:?}`"));
                 };
-                inner_interpret(&crate::parser::parse(crate::lexer::tokenize(&inner_interpret(body, state.clone())?.to_string())?)?, state)
+                let text = inner_interpret(body, state.clone())?.to_string();
+                // #[cfg(debug_assertions)]
+                // println!("Evaluating Inner: {text}");
+                let tokens = crate::lexer::tokenize(&text)?;
+                // #[cfg(debug_assertions)]
+                // println!("Evaluating Tokens: {tokens:?}");
+                let syntax = crate::parser::parse(tokens)?;
+                // #[cfg(debug_assertions)]
+                // println!("Evaluating Syntax: {syntax:?}");
+                inner_interpret(&syntax, state)
             }
             Value::Object(obj) => {
                 let Some(call) = obj.get(&"call".into()) else {
@@ -204,7 +209,7 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                     let arg_eval = if let Some(syn) = args.get(idx) {
                         inner_interpret(syn, state.clone())?
                     } else {
-                        Pointer::from(Value::Undefined)
+                        Pointer::from(Value::empty_object())
                     };
                     inner_state.insert(ident.clone(), arg_eval);
                 }

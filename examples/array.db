@@ -1,0 +1,20 @@
+const const new_array: Fn = ()->{}!
+
+const const get: Fn<T[],i32> = (array: T[], idx: i32)->eval(`array.${idx}`)!
+
+const const len: Fn<T[]> = array->{
+    const const count: Fn<T[],i32> = (array: T[], count: i32)->{
+        if(
+            get(array, count) ==== undefined,
+            count,
+            count(array, count + 1)
+        )!
+    }!
+
+    count(array, 0)
+}!
+
+const const push: Fn<T[],T> = (array: T[], item: T)->{
+    const const length: i32 = len(arr)!
+    eval(`array.${length} = item!`)!
+}!

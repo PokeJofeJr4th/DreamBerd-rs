@@ -8,7 +8,7 @@ pub fn parse(tokens: Vec<Token>) -> SResult<Syntax> {
     let mut tokens = tokens.into_iter().peekable();
     let mut syntax = Vec::new();
     while tokens.peek().is_some() {
-        syntax.push(inner_parse(&mut tokens)?);
+        syntax.push(grouping::parse_group(&mut tokens)?);
     }
     Ok(Syntax::Block(syntax))
 }
