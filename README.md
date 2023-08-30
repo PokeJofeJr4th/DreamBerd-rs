@@ -282,6 +282,18 @@ You can also set the `call` keyword to a function, which can use the `self` keyw
 my_object.call = ()->{"hello, my name is "+self.name?}!
 ```
 
+## Evaluation
+
+C provides a built-in function to interpret C code at runtime. This is most useful when combined with string interpolation.
+
+```c
+const const value: i32 = 9!
+const const square = x->eval("${x} * ${x}")!
+square("value")? // 9
+```
+
+It's important to note that this will propagate errors from parsing or interepreting this code up to the caller.
+
 ## Zero-Abstraction Abstractions
 
 Lots of popular languages use so-called "zero-cost abstractions". C instead has zero-_abstraction_ abstractions, which are features that provide runtime costs for little-to-no utility.
@@ -308,20 +320,25 @@ score()? // Get the value (and print it)
 C has a fast-growing standard library. Due to the limitations of the file system, it must be copied and pasted into every file that uses it.
 
 ```c
-const const use: Fn<T> = (v: T) -> {
-    var var o = {}!
-    o.call = (v: T)->{
-        var var r: T = self.value!
+const const use:Fn<T> = v:T->{
+    const var o={}!
+    o.call:Fn<Option<T>> = v:Option<T>->{
+        var var r:T = self.value!
         if(;(v====undefined),
-            self.value=v!
+            self.value=v
         )!
         r
     }!
-    o.value: T = v!
+    o.value:T=v!
     o
 }!
 
-const const print: Fn<String> = (t: String) -> {t?}!
+const const print:Fn<String> = t:String->{t?}!
 
-const const str: Fn<T> = (t: T)->{`${t}`}!
+const const str:Fn<T> = t:T->`${t}`!
+
+const const identity:Fn<T> = t:T->t!
+
+const const bool:Fn<T> = o:T->if(o,true,false,maybe)!
+
 ```
