@@ -10,7 +10,7 @@ pub fn parse(tokens: Vec<Token>) -> SResult<Syntax> {
     while tokens.peek().is_some() {
         syntax.push(grouping::parse_group(&mut tokens)?);
     }
-    Ok(Syntax::Block(syntax))
+    Ok(optimize(Syntax::Block(syntax)))
 }
 
 fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<Syntax> {
@@ -187,4 +187,36 @@ fn get_type<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<()> 
         _ => {}
     }
     Ok(())
+}
+
+fn optimize(syn: Syntax) -> Syntax {
+    match syn {
+        Syntax::Declare(typ, ident, inner) => {
+            Syntax::Declare(typ, ident, Box::new(optimize(*inner)))
+        }
+        Syntax::Function(args, inner) => Syntax::Function(args, Box::new(optimize(*inner))),
+        Syntax::Call(ident, args) => Syntax::Call(ident, args.into_iter().map(optimize).collect()),
+        Syntax::Operation(lhs, op, rhs) => {
+            Syntax::Operation(Box::new(optimize(*lhs)), op, Box::new(optimize(*rhs)))
+        }
+        Syntax::Block(inner) => {
+            let mut new_inner: Vec<_> = Vec::with_capacity(inner.len());
+            // flatten nested blocks
+            for item in inner {
+                match item {
+                    Syntax::Block(block) => new_inner.extend(block),
+                    other => new_inner.push(other),
+                }
+            }
+            // replace a block containing a single element with that element
+            if new_inner.len() == 1 {
+                new_inner.pop().unwrap()
+            } else {
+                Syntax::Block(new_inner)
+            }
+        }
+        Syntax::Debug(inner, lvl) => Syntax::Debug(Box::new(optimize(*inner)), lvl),
+        Syntax::Negate(inner) => Syntax::Negate(Box::new(optimize(*inner))),
+        basic @ (Syntax::Ident(_) | Syntax::String(_)) => basic,
+    }
 }
