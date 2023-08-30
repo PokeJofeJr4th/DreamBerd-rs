@@ -8,7 +8,7 @@ The full specification for C is available at https://github.com/TodePond/C. This
 
 Every statement ends with an exclamation mark! If you're feeling extra, you can even use multiple!!!
 
-```js
+```c
 print("Hello World!")!
 
 print("Hi!!")!!!!
@@ -16,7 +16,7 @@ print("Hi!!")!!!!
 
 If you're unsure, that's okay too! You can also use question marks? This will print debug information to the console? The more question marks, the more detailed the information?
 
-```js
+```c
 print("uh... hi??")???
 ```
 
@@ -24,7 +24,7 @@ print("uh... hi??")???
 
 You might be wondering what C uses for its negation operator, since most languages use `!`. Don't worry! `;` and `-` both negate the value in front of them.
 
-```js
+```c
 ;"hello there"? // "ereht olleh"
 -true? // false
 ;1 // -1
@@ -35,7 +35,7 @@ You might be wondering what C uses for its negation operator, since most languag
 
 There are four types of declarations. Constant constants can't be changed at all.
 
-```js
+```c
 const const name = "Ava"!
 name += "?"! // does nothing
 name = "John"! // does nothing
@@ -43,7 +43,7 @@ name = "John"! // does nothing
 
 Constant variables can be edited but not reassigned.
 
-```js
+```c
 const var age = 1!
 age += 1!
 age? // 2
@@ -51,7 +51,7 @@ age? // 2
 
 Variable constants can be reassigned but not edited.
 
-```js
+```c
 var const id = "main"!
 id = "no thank you"!
 id? // "no thank you"
@@ -59,7 +59,7 @@ id? // "no thank you"
 
 Variable variables can be reassigned and edited.
 
-```js
+```c
 var var count = 0!
 count += 1!
 count = 2!
@@ -69,7 +69,7 @@ count = 2!
 
 C is a weakly-typed language. However, type annotations can be added to declarations and functions.
 
-```js
+```c
 var const name: String = "Gary"!
 const var age: i32 = 22!
 
@@ -86,7 +86,7 @@ const const mul: Fn<i32, i32> = (lhs: i32, rhs: i32)->{
 
 Both variables and constants can be named with any Unicode character or string that isn't interpreted as another feature.
 
-```js
+```c
 const const firstAlphabetLetter = 'A'!
 var const 👍 = true!
 var var 1️⃣ = 1!
@@ -94,7 +94,7 @@ var var 1️⃣ = 1!
 
 This includes numbers, and other language constructs.
 
-```js
+```c
 const const 5 = 4!
 const const true = false!
 2 + 2 ==== 5? // true
@@ -115,7 +115,7 @@ Numbers between 0 and 1, numbers that are not a number, keywords, functions, and
 
 C has a simple `if` statement:
 
-```js
+```c
 if(true ===== false,
     print("true is false"),
     print("true is not false"),
@@ -127,7 +127,7 @@ Notice, the if statement includes a section for if the discriminating variable i
 
 This is actually a function, so it can be assigned:
 
-```js
+```c
 const const the_if_statement = if!
 
 the_if_statement(true ==== false, print("true is false"))!
@@ -137,7 +137,7 @@ the_if_statement(true ==== false, print("true is false"))!
 
 Strings can be declared with backticks, single quotes, double quotes, zero quotes, or even french quotes!
 
-```js
+```c
 const const name: String = `Jeremy`!
 const const name: String = 'Lu'!
 const const name: String = "Luke"!
@@ -149,7 +149,7 @@ const const name: String = «antoine»!
 
 Please remember to use your regional currency when interpolating strings.
 
-```js
+```c
 const const name: String = "world"!
 print("Hello ${name}!")!
 print("Hello £{name}!")!
@@ -158,7 +158,7 @@ print("Hello ¥{name}!")!
 
 And make sure to follow your local typographical norms
 
-```js
+```c
 print("Hello {name}€")!
 ```
 
@@ -166,20 +166,20 @@ print("Hello {name}€")!
 
 C has significant whitespace. Use spacing to specify the order of arithmetic operations.
 
-```js
+```c
 1 + 2*3? // 7
 1+2 * 3? // 9
 ```
 
 For operations with the same amount of whitespace, grouping is poorly defined.
 
-```js
+```c
 1+1*1+1? // 4
 ```
 
 You can add strings together and multiply them by numbers. Negating a string reverses it.
 
-```js
+```c
 "he" + "l"*2 "o" + " " + "world"? // "hello world"
 "johnny"*1.5? // "johnnyjoh"
 "no lemon " + -"no lemon"? // "no lemon nomel on"
@@ -189,7 +189,7 @@ You can add strings together and multiply them by numbers. Negating a string rev
 
 Dividing by zero returns undefined.
 
-```js
+```c
 3 / 0? // undefined
 ```
 
@@ -199,19 +199,19 @@ JavaScript lets you do different levels of comparison. `==` for loose comparison
 
 You can use `===` to do a loose check.
 
-```js
+```c
 3.14 === "3.14"? // true
 ```
 
 You can use `====` to do a more precise check.
 
-```js
+```c
 3.14 ==== "3.14"? // false
 ```
 
 You can use `=====` to be EVEN MORE precise!
 
-```js
+```c
 const const pi = 3.14!
 pi ===== pi? // true
 3.14 ===== 3.14? // false (this differs from the official C specification)
@@ -220,7 +220,7 @@ pi ===== pi? // true
 
 Finally, if you want to be much less precise, you can use `==`.
 
-```js
+```c
 3 == 3.14? // true
 🥧 == 22/7? // true
 ```
@@ -229,7 +229,7 @@ Finally, if you want to be much less precise, you can use `==`.
 
 To declare a function, you can use any letters from the word function (as long as they're in order):
 
-```js
+```c
 function(add, (a, b),  (a + b))!
 func(multiply, (a, b), (a * b))!
 fun(subtract, (a, b), (a - b))!
@@ -240,7 +240,7 @@ union(inverse, (a), (1/a))!
 
 Alternatively, you can use the arrow syntax
 
-```js
+```c
 const const does_she_really_like_you = ()->{maybe}!
 ```
 
@@ -248,14 +248,14 @@ const const does_she_really_like_you = ()->{maybe}!
 
 To avoid confusion, the delete statement only works with identifiers like variables, numbers, strings, and booleans.
 
-```js
+```c
 delete(3)!
 2+1 === 3? // false
 ```
 
 C is a multi-paradigm programming language, which means that you can delete the keywords and paradigms you don't like.
 
-```js
+```c
 delete(maybe)!!!
 const const is_raining = maybe!
 is_raining? // undefined
@@ -263,7 +263,7 @@ is_raining? // undefined
 
 When perfection is achieved and there is nothing left to delete, you can do this:
 
-```js
+```c
 delete(delete)!
 ```
 
@@ -271,14 +271,14 @@ delete(delete)!
 
 To create an object, start with the empty object and add values to it.
 
-```js
+```c
 const var my_object = {}!
 my_object.name = "Samuel"!
 ```
 
 You can also set the `call` keyword to a function, which can use the `self` keyword to access attributes of the class.
 
-```js
+```c
 my_object.call = ()->{"hello, my name is "+self.name?}!
 ```
 
@@ -290,13 +290,13 @@ Lots of popular languages use so-called "zero-cost abstractions". C instead has 
 
 To use a signal, use `use`.
 
-```js
+```c
 const var score = use(0)!
 ```
 
 In C, you can set (and get) signals with just one function:
 
-```js
+```c
 const var score = use(0)!
 
 score(9)! // Set the value
@@ -307,7 +307,7 @@ score()? // Get the value (and print it)
 
 C has a fast-growing standard library. Due to the limitations of the file system, it must be copied and pasted into every file that uses it.
 
-```js
+```c
 const const use: Fn<T> = (v: T) -> {
     var var o = {}!
     o.call = (v: T)->{
