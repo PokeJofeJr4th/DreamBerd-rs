@@ -2,7 +2,7 @@
 
 Rust-based interpreter for the DreamBerd language.
 
-The full specification for DreamBerd is available at https://github.com/TodePond/WhenWillProgrammersStopMakingDecisionsForOurSocietyAndJustLeaveUsAloneAlsoHackerNewsIsAVileWebsite. This file only contains the segments of the specification that are implemented in DreamBerd-rs.
+The full specification for DreamBerd is available at https://github.com/TodePond/DreamBerd. This file only contains the segments of the specification that are implemented in DreamBerd-rs.
 
 ## Statements
 
