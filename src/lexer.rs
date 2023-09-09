@@ -133,6 +133,8 @@ fn inner_tokenize<T: Iterator<Item = char>>(chars: &mut Peekable<T>) -> SResult<
         '\'' => lex_string(chars, '\'')?,
         '`' => lex_string(chars, '`')?,
         '«' => lex_string(chars, '»')?,
+        '»' => lex_string(chars, '«')?,
+        '„' => lex_string(chars, '“')?,
         '=' => count_char(chars, '=', Token::Equal),
         '!' => count_char(chars, '!', Token::Bang),
         '?' => count_char(chars, '?', Token::Question),

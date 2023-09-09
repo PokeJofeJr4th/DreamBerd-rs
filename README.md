@@ -135,14 +135,16 @@ the_if_statement(true ==== false, print("true is false"))!
 
 ## Strings
 
-Strings can be declared with backticks, single quotes, double quotes, zero quotes, or even french quotes!
+Strings can be declared with backticks, single quotes, double quotes, zero quotes, or even french, austrian, or german quotes!
 
 ```c
 const const name: String = `Jeremy`!
 const const name: String = 'Lu'!
 const const name: String = "Luke"!
 const const name: String = L!
-const const name: String = «antoine»!
+const const name: String = «Antoine»!
+const const name: String = »Lorenz«!
+const const name: String = „Karl“!
 ```
 
 ### String Interpolation
