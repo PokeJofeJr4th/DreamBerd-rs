@@ -1,4 +1,4 @@
-const const new:Fn<T> = item:T->{
+const const new:Fn<T> = (item:T)->{
     const var o:T[]={}!
     o.call:Fn = ()->{
         self.value
