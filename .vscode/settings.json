@@ -69,7 +69,7 @@
         }
       ]
     },
-    "(true|false|maybe|undefined|self|if|delete|eval)": {
+    "\\b(true|false|maybe|undefined|self|if|delete|eval)\\b": {
       "filterFileRegex": ".*\\.db",
       "decorations": [
         {
