@@ -11,7 +11,7 @@
         {}
       ]
     },
-    "(const|var)( +)(const|var)( +)([^ +\\-\\*\\/<>=\\(\\)\\[\\]!;:\\.{}\n,]+)(:?\\s*)(([\\w<>\\[\\],]+?))?( *)([+\\-\\/*]?)(= *)([^!\n?]+)": {
+    "(const|var)(\\s+)(const|var)(\\s+)([^ +\\-\\*\\/<>=\\(\\)\\[\\]!;:\\.{}\n,]+)(:?\\s*)(([\\w<>\\[\\],]+?))?( *)([+\\-\\/*]?)(= *)([^!\n?]+)": {
       "filterFileRegex": ".*\\.db",
       "decorations": [
         {
@@ -27,7 +27,41 @@
         },
         {},
         {
-          "color": "#ffa0de" //lifetime
+          "color": "#ffa0de" //type
+        }
+      ]
+    },
+    "({)([^}]*)(})(€|円|₽)": {
+      "filterFileRegex": ".*\\.db",
+      "decorations": [
+        {
+          "color": "#6680cc"
+        },
+        {
+          "color": "#ffffff"
+        },
+        {
+          "color": "#6680cc"
+        },
+        {
+          "color": "#dccc66"
+        }
+      ]
+    },
+    "(\\$|£|¥)({)([^}]*)(})": {
+      "filterFileRegex": ".*\\.db",
+      "decorations": [
+        {
+          "color": "#dccc66"
+        },
+        {
+          "color": "#6680cc"
+        },
+        {
+          "color": "#ffffff"
+        },
+        {
+          "color": "#6680cc"
         }
       ]
     },
@@ -43,6 +77,22 @@
         {
           "color": "#228840"
         }
+      ]
+    },
+    "(„)(.*)(“)": {
+      "filterFileRegex": ".*\\..db",
+      "decorations": [
+        { "color": "#228840" },
+        { "color": "#228840" },
+        { "color": "#228840" }
+      ]
+    },
+    "(»)(.*)(«)": {
+      "filterFileRegex": ".*\\..db",
+      "decorations": [
+        { "color": "#228840" },
+        { "color": "#228840" },
+        { "color": "#228840" }
       ]
     },
     "(«)(.*)(»)": {
