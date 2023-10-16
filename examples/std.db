@@ -18,3 +18,5 @@ const const str:Fn<T> = (t:T)->`${t}`!
 const const identity:Fn<T> = (t:T)->t!
 
 const const bool:Fn<T> = (o:T)->if(o,true,false,maybe)!
+
+const const db:Fn<> = ()->{"<<LOGO UNDER CONSTRUCTION>>"?}!
