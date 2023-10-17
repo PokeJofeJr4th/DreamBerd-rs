@@ -83,7 +83,7 @@ fn interpret_operation(
         (&*lhs_eval.as_const(), op, rhs)
     {
         let inner_var = lhs_eval.as_var();
-        let Value::Object(ref mut obj) = *inner_var.borrow_mut() else { panic!("Internal Compiler Error at {}:{}", file!(), line!()) };
+        let Value::Object(ref mut obj) = inner_var.borrow_mut().value else { panic!("Internal Compiler Error at {}:{}", file!(), line!()) };
         let key = Value::from(ident.clone());
         if let Some(val) = obj.get(&key) {
             // println!("{val:?}");
@@ -178,7 +178,7 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                     .into_iter()
                     .map(|syn| match syn {
                         Syntax::Ident(str) => Ok(str),
-                        other => Err(format!("Invalid parameter name: `{other:?}`")),
+                        other => Err(format!("Invalid parameter name: `{other}`")),
                     })
                     .collect::<Result<_, _>>()?;
                 let inner_val = Value::Function(args, body.clone());
@@ -222,7 +222,7 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                 }
                 inner_interpret(body, rc_mut_new(inner_state))
             }
-            other => Err(format!("`{other:?}` is not a function")),
+            other => Err(format!("`{other}` is not a function")),
         }
     )
 }

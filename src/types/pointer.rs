@@ -14,18 +14,41 @@ use super::prelude::*;
 #[derive(PartialEq, Eq, Clone)]
 pub enum Pointer {
     ConstConst(Rc<Value>),
-    ConstVar(RcMut<Value>),
+    ConstVar(RcMut<MutValue>),
     VarConst(RcMut<Rc<Value>>),
-    VarVar(RcMut<RcMut<Value>>),
+    VarVar(RcMut<RcMut<MutValue>>),
+}
+
+#[derive(PartialEq, Eq, Clone)]
+pub struct MutValue {
+    pub value: Value,
+    pub previous: Option<Value>,
+    event_listeners: Vec<(Syntax, RcMut<State>)>,
+}
+
+impl MutValue {
+    pub fn assign(&mut self, value: Value) {
+        self.previous = Some(core::mem::replace(&mut self.value, value));
+    }
+}
+
+impl From<Value> for MutValue {
+    fn from(value: Value) -> Self {
+        Self {
+            value,
+            previous: None,
+            event_listeners: Vec::new(),
+        }
+    }
 }
 
 impl Debug for Pointer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::ConstConst(val) => write!(f, "ConstConst({val})"),
-            Self::ConstVar(val) => write!(f, "ConstVar({})", val.borrow()),
+            Self::ConstVar(val) => write!(f, "ConstVar({})", val.borrow().value),
             Self::VarConst(val) => write!(f, "VarConst({})", val.borrow()),
-            Self::VarVar(val) => write!(f, "VarVar({})", val.borrow().borrow()),
+            Self::VarVar(val) => write!(f, "VarVar({})", val.borrow().borrow().value),
         }
     }
 }
@@ -35,8 +58,8 @@ impl Display for Pointer {
         match self {
             Self::ConstConst(val) => write!(f, "{val}"),
             Self::VarConst(val) => write!(f, "{}", val.borrow()),
-            Self::ConstVar(val) => write!(f, "{}", val.borrow()),
-            Self::VarVar(val) => write!(f, "{}", val.borrow().borrow()),
+            Self::ConstVar(val) => write!(f, "{}", val.borrow().value),
+            Self::VarVar(val) => write!(f, "{}", val.borrow().borrow().value),
         }
     }
 }
@@ -47,8 +70,8 @@ impl Hash for Pointer {
         match self {
             Self::ConstConst(val) => val.hash(state),
             Self::VarConst(val) => val.borrow().hash(state),
-            Self::ConstVar(var) => var.borrow().hash(state),
-            Self::VarVar(var) => var.borrow().borrow().hash(state),
+            Self::ConstVar(var) => var.borrow().value.hash(state),
+            Self::VarVar(var) => var.borrow().borrow().value.hash(state),
         }
     }
 }
@@ -59,8 +82,8 @@ impl Pointer {
         match self {
             Self::ConstConst(val) => (**val).clone(),
             Self::VarConst(val) => (**val.borrow()).clone(),
-            Self::VarVar(val) => (*val).borrow().borrow().clone(),
-            Self::ConstVar(val) => (**val).borrow().clone(),
+            Self::VarVar(val) => (*val).borrow().borrow().value.clone(),
+            Self::ConstVar(val) => (**val).borrow().value.clone(),
         }
     }
 
@@ -126,7 +149,7 @@ impl Pointer {
                 Some(ptr) => Ok(ptr.clone()),
                 None => {
                     let val = if allow_modify {
-                        Self::ConstVar(rc_mut_new(Value::empty_object()))
+                        Self::ConstVar(rc_mut_new(Value::empty_object().into()))
                     } else {
                         Self::ConstConst(Rc::new(Value::empty_object()))
                     };
@@ -163,16 +186,16 @@ impl Pointer {
         match self {
             Self::ConstConst(val) => val.clone(),
             Self::VarConst(val) => val.borrow().clone(),
-            Self::ConstVar(val) => Rc::new(val.borrow().clone()),
-            Self::VarVar(val) => Rc::new(val.borrow().borrow().clone()),
+            Self::ConstVar(val) => Rc::new(val.borrow().value.clone()),
+            Self::VarVar(val) => Rc::new(val.borrow().borrow().value.clone()),
         }
     }
 
     /// Convert to a mutable reference to a value. If `self` is value-const, clones the internal value
-    pub fn as_var(&self) -> RcMut<Value> {
+    pub fn as_var(&self) -> RcMut<MutValue> {
         match self {
-            Self::ConstConst(val) => rc_mut_new(val.as_ref().clone()),
-            Self::VarConst(val) => rc_mut_new(val.borrow().as_ref().clone()),
+            Self::ConstConst(val) => rc_mut_new(val.as_ref().clone().into()),
+            Self::VarConst(val) => rc_mut_new(val.borrow().as_ref().clone().into()),
             Self::ConstVar(val) => val.clone(),
             Self::VarVar(val) => val.borrow().clone(),
         }
@@ -183,8 +206,8 @@ impl Pointer {
         match self {
             Self::ConstConst(val) => func(val.as_ref()),
             Self::VarConst(val) => func(val.borrow().as_ref()),
-            Self::ConstVar(val) => func(&val.borrow()),
-            Self::VarVar(val) => func(&val.borrow().borrow()),
+            Self::ConstVar(val) => func(&val.borrow().value),
+            Self::VarVar(val) => func(&val.borrow().borrow().value),
         }
     }
 
@@ -219,10 +242,10 @@ impl AddAssign for Pointer {
         let output = self.clone_inner() + rhs.clone_inner();
         match self {
             Self::ConstVar(val) => {
-                val.replace(output);
+                val.borrow_mut().assign(output);
             }
             Self::VarVar(val) => {
-                val.borrow().replace(output);
+                val.borrow().borrow_mut().assign(output);
             }
             _ => {}
         };
@@ -242,10 +265,10 @@ impl SubAssign for Pointer {
         let output = self.clone_inner() - rhs.clone_inner();
         match self {
             Self::ConstVar(val) => {
-                val.replace(output);
+                val.borrow_mut().assign(output);
             }
             Self::VarVar(val) => {
-                val.borrow().replace(output);
+                val.borrow().borrow_mut().assign(output);
             }
             _ => {}
         };
@@ -265,10 +288,10 @@ impl MulAssign for Pointer {
         let output = self.clone_inner() * rhs.clone_inner();
         match self {
             Self::ConstVar(val) => {
-                val.replace(output);
+                val.borrow_mut().assign(output);
             }
             Self::VarVar(val) => {
-                val.borrow().replace(output);
+                val.borrow().borrow_mut().assign(output);
             }
             _ => {}
         };
@@ -288,10 +311,10 @@ impl DivAssign for Pointer {
         let output = self.clone_inner() / rhs.clone_inner();
         match self {
             Self::ConstVar(val) => {
-                val.replace(output);
+                val.borrow_mut().assign(output);
             }
             Self::VarVar(val) => {
-                val.borrow().replace(output);
+                val.borrow().borrow_mut().assign(output);
             }
             _ => {}
         };

@@ -6,7 +6,7 @@ use crate::types::prelude::*;
 
 use core::f64::consts as f64;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct State {
     current: HashMap<Rc<str>, Pointer>,
     parent: Option<RcMut<State>>,
