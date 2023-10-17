@@ -249,6 +249,14 @@ Alternatively, you can use the arrow syntax
 const const does_she_really_like_you = ()->{maybe}!
 ```
 
+## Built In Functions
+
+Did you know yoit know you could print the Dreamberd Logo!
+All you have to do is
+ ```c
+ dreamberd_logo()! // Dreamberd
+ ```
+
 ## Delete
 
 To avoid confusion, the delete statement only works with identifiers like variables, numbers, strings, and booleans.
