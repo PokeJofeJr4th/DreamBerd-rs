@@ -97,46 +97,53 @@ fn interpret_operation(
     let rhs_eval = inner_interpret(rhs, state)?;
     // println!("{lhs:?} op {rhs:?}");
     // println!("{lhs_eval:?} op {rhs_eval:?}");
-    match op {
+    let ret = match op {
         Operation::Equal(1) => {
             lhs_eval.assign(&rhs_eval)?;
-            Ok(rhs_eval)
+            rhs_eval
         }
-        Operation::Equal(precision) => Ok(lhs_eval.eq(&rhs_eval, precision - 1)),
-        Operation::Add => Ok(lhs_eval + rhs_eval),
-        Operation::Sub => Ok(lhs_eval - rhs_eval),
-        Operation::Mul => Ok(lhs_eval * rhs_eval),
-        Operation::Div => Ok(lhs_eval / rhs_eval),
-        Operation::Mod => Ok(lhs_eval % rhs_eval),
-        Operation::Dot => rhs_eval.with_ref(|rhs_eval| lhs_eval.dot(rhs_eval)),
-        Operation::And => Ok(lhs_eval & rhs_eval),
-        Operation::Or => Ok(lhs_eval | rhs_eval),
+        Operation::Equal(precision) => lhs_eval.eq(&rhs_eval, precision - 1),
+        Operation::Add => lhs_eval + rhs_eval,
+        Operation::Sub => lhs_eval - rhs_eval,
+        Operation::Mul => lhs_eval * rhs_eval,
+        Operation::Div => lhs_eval / rhs_eval,
+        Operation::Mod => lhs_eval % rhs_eval,
+        Operation::Dot => rhs_eval.with_ref(|rhs_eval| lhs_eval.dot(rhs_eval))?,
+        Operation::And => lhs_eval & rhs_eval,
+        Operation::Or => lhs_eval | rhs_eval,
         Operation::AddEq => {
             lhs_eval += rhs_eval;
-            Ok(lhs_eval)
+            lhs_eval
         }
         Operation::SubEq => {
             lhs_eval -= rhs_eval;
-            Ok(lhs_eval)
+            lhs_eval
         }
         Operation::MulEq => {
             lhs_eval *= rhs_eval;
-            Ok(lhs_eval)
+            lhs_eval
         }
         Operation::DivEq => {
             lhs_eval /= rhs_eval;
-            Ok(lhs_eval)
+            lhs_eval
         }
         Operation::ModEq => {
             lhs_eval %= rhs_eval;
-            Ok(lhs_eval)
+            lhs_eval
         }
-        Operation::Lt => Ok(Pointer::from(lhs_eval < rhs_eval)),
-        Operation::Le => Ok(Pointer::from(lhs_eval <= rhs_eval)),
-        Operation::Gt => Ok(Pointer::from(lhs_eval > rhs_eval)),
-        Operation::Ge => Ok(Pointer::from(lhs_eval >= rhs_eval)),
+        Operation::Lt => Pointer::from(lhs_eval < rhs_eval),
+        Operation::Le => Pointer::from(lhs_eval <= rhs_eval),
+        Operation::Gt => Pointer::from(lhs_eval > rhs_eval),
+        Operation::Ge => Pointer::from(lhs_eval >= rhs_eval),
         Operation::Arrow => todo!(),
+    };
+    if let Some(val) = ret.as_var() {
+        let listeners = val.borrow().event_listeners.clone();
+        for (listener, state) in listeners {
+            inner_interpret(&listener, state)?;
+        }
     }
+    Ok(ret)
 }
 
 fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> SResult<Pointer> {
@@ -173,6 +180,15 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                     Some(eval) => Ok(eval.borrow().previous.as_ref().map_or_else(move || state.borrow().undefined.clone(), |prev| Pointer::ConstConst(Rc::new(prev.clone())))),
                     None => Ok(state.borrow().undefined.clone())
                 }
+            }
+            Value::Keyword(Keyword::When) => {
+                let [condition, body] = args else { return Err(String::from("`when` keyword requires two arguments; condition and body")) };
+                let idents = find_idents_in_syntax(condition);
+                for ident in idents {
+                    let Some(var) = state.borrow_mut().get(ident).as_var() else { continue };
+                    var.borrow_mut().add_event_listener(Syntax::Call("if".into(), vec![condition.clone(), body.clone()]), state.clone());
+                }
+                Ok(state.borrow().undefined.clone())
             }
             Value::Keyword(Keyword::Function) => {
                 let [Syntax::Ident(name), args, body] = args else {
@@ -233,4 +249,22 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
             other => Err(format!("`{other}` is not a function")),
         }
     )
+}
+
+fn find_idents_in_syntax(syn: &Syntax) -> Vec<Rc<str>> {
+    match syn {
+        Syntax::Ident(id) => vec![id.clone()],
+        Syntax::Block(stmts) => stmts.iter().flat_map(find_idents_in_syntax).collect(),
+        Syntax::Call(func, args) => args
+            .iter()
+            .flat_map(find_idents_in_syntax)
+            .chain(std::iter::once(func.clone()))
+            .collect(),
+        Syntax::Negate(syn) => find_idents_in_syntax(syn),
+        Syntax::Operation(lhs, _, rhs) => find_idents_in_syntax(lhs)
+            .into_iter()
+            .chain(find_idents_in_syntax(rhs))
+            .collect(),
+        _ => Vec::new(),
+    }
 }

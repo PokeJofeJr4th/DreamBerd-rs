@@ -23,12 +23,16 @@ pub enum Pointer {
 pub struct MutValue {
     pub value: Value,
     pub previous: Option<Value>,
-    event_listeners: Vec<(Syntax, RcMut<State>)>,
+    pub event_listeners: Vec<(Syntax, RcMut<State>)>,
 }
 
 impl MutValue {
     pub fn assign(&mut self, value: Value) {
         self.previous = Some(core::mem::replace(&mut self.value, value));
+    }
+
+    pub fn add_event_listener(&mut self, listener: Syntax, state: RcMut<State>) {
+        self.event_listeners.push((listener, state));
     }
 }
 

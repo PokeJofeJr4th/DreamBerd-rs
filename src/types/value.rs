@@ -380,18 +380,20 @@ pub enum Keyword {
     If,
     Previous,
     Var,
+    When,
 }
 
 impl Display for Keyword {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Const => write!(f, "const"),
-            Self::Var => write!(f, "var"),
+            Self::Eval => write!(f, "eval"),
             Self::Delete => write!(f, "delete"),
             Self::Function => write!(f, "function"),
             Self::If => write!(f, "if"),
             Self::Previous => write!(f, "previous"),
-            Self::Eval => write!(f, "eval"),
+            Self::Var => write!(f, "var"),
+            Self::When => write!(f, "when"),
         }
     }
 }

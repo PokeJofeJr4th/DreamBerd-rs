@@ -34,6 +34,7 @@ impl State {
         kw!(current "previous" => Keyword::Previous);
         kw!(current "true" => true);
         kw!(current "var" => Keyword::Var);
+        kw!(current "when" => Keyword::When);
         kw!(current "∞" => Value::Number(f64::INFINITY));
 
         let undefined = Pointer::ConstConst(Rc::new(Value::empty_object()));

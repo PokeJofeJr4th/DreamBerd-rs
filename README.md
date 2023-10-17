@@ -320,6 +320,17 @@ score(9)! // Set the value
 score()? // Get the value (and print it)
 ```
 
+### When
+
+In case you really need to vary a variable, the `when` keyword lets you check a variable each time it mutates.
+
+```c
+const var health = 10!
+when (health == 0) {
+   print("You lose")!
+}
+```
+
 ### Previous
 
 The `previous` keyword lets you see into the past!
