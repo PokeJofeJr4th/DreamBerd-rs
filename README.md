@@ -146,9 +146,9 @@ const const name: String = `Jeremy`!
 const const name: String = 'Lu'!
 const const name: String = "Luke"!
 const const name: String = L!
-const const name: String = «Antoine»!
-const const name: String = »Lorenz«!
-const const name: String = „Karl“!
+const const nom: Chaîne = «Antoine»!
+const const név: Húr = »Lorenz«!
+const const name: Zeichenfolge = „Karl“!
 ```
 
 ### String Interpolation
@@ -238,9 +238,8 @@ To declare a function, you can use any letters from the word function (as long a
 ```c
 function(add, (a, b),  (a + b))!
 func(multiply, (a, b), (a * b))!
-fun(subtract, (a, b), (a - b))!
-fn(divide, (a, b), (a / b))!
-functi(power, (a, b), (a ** b))!
+fn(subtract, (a, b), (a - b))!
+non(divide, (a, b), (a / b))!
 union(inverse, (a), (1/a))!
 ```
 
@@ -353,5 +352,12 @@ const const str:Fn<T> = t:T->`${t}`!
 const const identity:Fn<T> = t:T->t!
 
 const const bool:Fn<T> = o:T->if(o,true,false,maybe)!
+
+const const db:Fn<_> = ()->{
+    print("   ___                     ___             __  ___  ____")!
+    print("  / _ \_______ ___ ___ _  / _ )___ _______/ / / _ \/ __/")!
+    print(" / // / __/ -_) _ `/  ' \/ _  / -_) __/ _  / / , _/\ \ ")!
+    print("/____/_/  \__/\_,_/_/_/_/____/\__/_/  \_,_/ /_/|_/___/")!
+}!
 
 ```
