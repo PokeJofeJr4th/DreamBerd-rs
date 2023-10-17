@@ -2,7 +2,11 @@
 
 Rust-based interpreter for the DreamBerd language.
 
-The full specification for DreamBerd is available at https://github.com/TodePond/DreamBerd. This file only contains the segments of the specification that are implemented in DreamBerd-rs.
+The full specification for DreamBerd is available at https://github.com/TodePond/DreamBerd. This file only contains the segments of the specification that are implemented in DreamBerd-rs, along with some of my own additions.
+
+## Rapidly-Evaporating Program Logic (REPL)
+
+DreamBerd provides a convenient mode to execute code within the terminal. The preservation of state allows you to play with features of DreamBerd without writing your code into a file. You can also include code from a file by providing the filename as an argument, which will run it and allow you to play around in what remains.
 
 ## Statements
 
@@ -14,7 +18,7 @@ print("Hello World!")!
 print("Hi!!")!!!!
 ```
 
-If you're unsure, that's okay too! You can also use question marks? This will print debug information to the console? The more question marks, the more detailed the information?
+If you're unsure, that's okay too! You can also use question marks? This will print debug information to the console? The more question marks, the more detailed the information???
 
 ```c
 print("uh... hi??")???
