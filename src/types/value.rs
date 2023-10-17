@@ -378,6 +378,7 @@ pub enum Keyword {
     Eval,
     Function,
     If,
+    Previous,
     Var,
 }
 
@@ -389,6 +390,7 @@ impl Display for Keyword {
             Self::Delete => write!(f, "delete"),
             Self::Function => write!(f, "function"),
             Self::If => write!(f, "if"),
+            Self::Previous => write!(f, "previous"),
             Self::Eval => write!(f, "eval"),
         }
     }

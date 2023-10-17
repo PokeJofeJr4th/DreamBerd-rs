@@ -320,6 +320,19 @@ score(9)! // Set the value
 score()? // Get the value (and print it)
 ```
 
+### Previous
+
+The `previous` keyword lets you see into the past!
+
+Use it to get the previous value of a variable.
+
+```c
+const var score = 5!
+score += 1!
+print(score)! // 6
+print(previous(score))! // 5
+```
+
 ## Standard Library
 
 > #### New for October 2023!

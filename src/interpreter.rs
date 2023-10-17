@@ -80,9 +80,9 @@ fn interpret_operation(
 ) -> SResult<Pointer> {
     let mut lhs_eval = inner_interpret(lhs, state.clone())?;
     if let (Value::Object(_), Operation::Dot, Syntax::Ident(ident)) =
-        (&*lhs_eval.as_const(), op, rhs)
+        (&*lhs_eval.make_const(), op, rhs)
     {
-        let inner_var = lhs_eval.as_var();
+        let inner_var = lhs_eval.make_var();
         let Value::Object(ref mut obj) = inner_var.borrow_mut().value else { panic!("Internal Compiler Error at {}:{}", file!(), line!()) };
         let key = Value::from(ident.clone());
         if let Some(val) = obj.get(&key) {
@@ -165,6 +165,14 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                     state.borrow_mut().delete(key.clone());
                 }
                 Ok(state.borrow().undefined.clone())
+            }
+            Value::Keyword(Keyword::Previous) => {
+                let [arg] = args else { return Err(String::from("`previous` keyword requires one argument")) };
+                let evaluated = inner_interpret(arg, state.clone())?;
+                match evaluated.as_var() {
+                    Some(eval) => Ok(eval.borrow().previous.as_ref().map_or_else(move || state.borrow().undefined.clone(), |prev| Pointer::ConstConst(Rc::new(prev.clone())))),
+                    None => Ok(state.borrow().undefined.clone())
+                }
             }
             Value::Keyword(Keyword::Function) => {
                 let [Syntax::Ident(name), args, body] = args else {

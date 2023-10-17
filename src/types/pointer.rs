@@ -90,10 +90,10 @@ impl Pointer {
     /// Convert this pointer to a different type. Performs a shallow clone if switching between inner `const` and `var`
     pub fn convert(&self, vt: VarType) -> Self {
         match vt {
-            VarType::ConstConst => Self::ConstConst(self.as_const()),
-            VarType::ConstVar => Self::ConstVar(self.as_var()),
-            VarType::VarConst => Self::VarConst(rc_mut_new(self.as_const())),
-            VarType::VarVar => Self::VarVar(rc_mut_new(self.as_var())),
+            VarType::ConstConst => Self::ConstConst(self.make_const()),
+            VarType::ConstVar => Self::ConstVar(self.make_var()),
+            VarType::VarConst => Self::VarConst(rc_mut_new(self.make_const())),
+            VarType::VarVar => Self::VarVar(rc_mut_new(self.make_var())),
         }
     }
 
@@ -120,12 +120,12 @@ impl Pointer {
                     Self::ConstConst(_) | Self::VarConst(_),
                     Self::ConstConst(_) | Self::VarConst(_),
                 ) => unsafe {
-                    core::mem::transmute::<Rc<_>, u64>(self.as_const())
-                        == core::mem::transmute::<Rc<_>, u64>(rhs.as_const())
+                    core::mem::transmute::<Rc<_>, u64>(self.make_const())
+                        == core::mem::transmute::<Rc<_>, u64>(rhs.make_const())
                 },
                 (Self::ConstVar(_) | Self::VarVar(_), Self::ConstVar(_) | Self::VarVar(_)) => unsafe {
-                    core::mem::transmute::<Rc<_>, u64>(self.as_var())
-                        == core::mem::transmute::<Rc<_>, u64>(rhs.as_var())
+                    core::mem::transmute::<Rc<_>, u64>(self.make_var())
+                        == core::mem::transmute::<Rc<_>, u64>(rhs.make_var())
                 },
                 _ => false,
             })
@@ -167,12 +167,12 @@ impl Pointer {
             Self::ConstConst(_) => Err(format!("Can't assign to a `const const` {self:?}")),
             Self::ConstVar(_) => Err(format!("Can't assign to a `const var` {self:?}")),
             Self::VarConst(ptr) => {
-                ptr.replace(rhs.as_const());
+                ptr.replace(rhs.make_const());
                 Ok(())
             }
             Self::VarVar(ptr) => {
                 // println!("{self:?} => {rhs:?}");
-                ptr.replace(rhs.as_var());
+                ptr.replace(rhs.make_var());
                 // println!("{self:?}");
                 Ok(())
             }
@@ -182,7 +182,7 @@ impl Pointer {
     /// Convert to an immutable reference to a value. If `self` is value-var, clones the internal value.
     ///
     /// If you want to use a reference to the value inside of a function, look into `Pointer::with_ref`.
-    pub fn as_const(&self) -> Rc<Value> {
+    pub fn make_const(&self) -> Rc<Value> {
         match self {
             Self::ConstConst(val) => val.clone(),
             Self::VarConst(val) => val.borrow().clone(),
@@ -192,12 +192,21 @@ impl Pointer {
     }
 
     /// Convert to a mutable reference to a value. If `self` is value-const, clones the internal value
-    pub fn as_var(&self) -> RcMut<MutValue> {
+    pub fn make_var(&self) -> RcMut<MutValue> {
         match self {
             Self::ConstConst(val) => rc_mut_new(val.as_ref().clone().into()),
             Self::VarConst(val) => rc_mut_new(val.borrow().as_ref().clone().into()),
             Self::ConstVar(val) => val.clone(),
             Self::VarVar(val) => val.borrow().clone(),
+        }
+    }
+
+    /// Convert to a mutable reference to a value. If `self` is value-const, returns None
+    pub fn as_var(&self) -> Option<RcMut<MutValue>> {
+        match self {
+            Self::ConstConst(_) | Self::VarConst(_) => None,
+            Self::ConstVar(val) => Some(val.clone()),
+            Self::VarVar(val) => Some(val.borrow().clone()),
         }
     }
 

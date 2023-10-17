@@ -22,18 +22,21 @@ macro_rules! kw {
 impl State {
     pub fn new() -> Self {
         let mut current = HashMap::new();
-        let undefined = Pointer::ConstConst(Rc::new(Value::empty_object()));
+
         kw!(current "🥧" => f64::PI);
-        kw!(current "delete" => Keyword::Delete);
         kw!(current "const" => Keyword::Const);
-        kw!(current "var" => Keyword::Var);
-        kw!(current "if" => Keyword::If);
+        kw!(current "delete" => Keyword::Delete);
         kw!(current "eval" => Keyword::Eval);
-        kw!(current "true" => true);
         kw!(current "false" => false);
-        kw!(current "maybe" => Boolean::Maybe);
+        kw!(current "if" => Keyword::If);
         kw!(current "infinity" => Value::Number(f64::INFINITY));
+        kw!(current "maybe" => Boolean::Maybe);
+        kw!(current "previous" => Keyword::Previous);
+        kw!(current "true" => true);
+        kw!(current "var" => Keyword::Var);
         kw!(current "∞" => Value::Number(f64::INFINITY));
+
+        let undefined = Pointer::ConstConst(Rc::new(Value::empty_object()));
         current.insert("undefined".into(), undefined.clone());
         Self {
             current,
