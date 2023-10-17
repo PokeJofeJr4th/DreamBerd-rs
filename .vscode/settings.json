@@ -15,7 +15,7 @@
       "filterFileRegex": ".*\\.db",
       "decorations": [
         {
-          "color": "#66cc80" // first const
+          "color": "#6680cc" // first const
         },
         {},
         {

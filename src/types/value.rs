@@ -98,7 +98,7 @@ impl Display for Value {
                 map.finish()
             }
             Self::Function(args, body) => {
-                write!(f, "{args:?} -> {body:?}")
+                write!(f, "{args:?} -> {body}")
             }
             Self::Keyword(kw) => write!(f, "{kw}"),
         }
@@ -297,18 +297,10 @@ impl Value {
                 )
             }
             (Self::Object(lhs), Self::Object(rhs)) => Self::from(
-                lhs.iter()
-                    .filter(|(k, v)| match rhs.get(k) {
-                        Some(r) => r.eq(v, precision) == Self::from(false),
-                        None => true,
-                    })
-                    .next()
-                    .is_none()
-                    && rhs
-                        .iter()
-                        .filter(|(k, _)| lhs.get(k).is_none())
-                        .next()
-                        .is_none(),
+                !lhs.iter().any(|(k, v)| {
+                    rhs.get(k)
+                        .map_or(true, |r| r.eq(v, precision) == Self::from(false))
+                }) && !rhs.iter().any(|(k, _)| lhs.get(k).is_none()),
             ),
             _ => Self::from(false),
         }

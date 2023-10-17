@@ -6,9 +6,13 @@ pub fn interpret(src: &Syntax) -> SResult<Pointer> {
     inner_interpret(src, rc_mut_new(State::new()))
 }
 
-fn inner_interpret(src: &Syntax, state: RcMut<State>) -> SResult<Pointer> {
+pub fn inner_interpret(src: &Syntax, state: RcMut<State>) -> SResult<Pointer> {
     match src {
-        Syntax::Debug(content, level) => {
+        Syntax::Statement(false, content, _) => {
+            inner_interpret(content, state.clone())?;
+            Ok(state.borrow().undefined.clone())
+        }
+        Syntax::Statement(true, content, level) => {
             if *level >= 3 {
                 println!("{content:?}");
             }
@@ -29,13 +33,13 @@ fn inner_interpret(src: &Syntax, state: RcMut<State>) -> SResult<Pointer> {
             let state = rc_mut_new(State::from_parent(state));
             let mut iter = statements.iter();
             let Some(last) = iter.next_back() else {
-                return Ok(Pointer::from(Value::empty_object()))
+                return Ok(state.borrow().undefined.clone())
             };
             for syn in iter {
                 inner_interpret(syn, state.clone())?;
             }
             let res = inner_interpret(last, state)?;
-                Ok(res)
+            Ok(res)
         }
         Syntax::Declare(var_type, ident, value) => {
             let val = inner_interpret(value, state.clone())?;
@@ -43,7 +47,7 @@ fn inner_interpret(src: &Syntax, state: RcMut<State>) -> SResult<Pointer> {
                 .borrow_mut()
                 .insert(ident.clone(), val.convert(*var_type));
             // println!("{state:#?}");
-            Ok(Pointer::from(Value::empty_object()))
+            Ok(state.borrow().undefined.clone())
         }
         Syntax::String(str) => {
             let mut string_buf = String::new();
@@ -85,7 +89,7 @@ fn interpret_operation(
             // println!("{val:?}");
             return Ok(val.clone());
         }
-        let ptr = Pointer::from(Value::empty_object()).convert(VarType::VarVar);
+        let ptr = state.borrow().undefined.convert(VarType::VarVar);
         // println!("{ptr:?}");
         obj.insert(key, ptr.clone());
         return Ok(ptr);
@@ -127,10 +131,10 @@ fn interpret_operation(
             lhs_eval %= rhs_eval;
             Ok(lhs_eval)
         }
-        Operation::Ls => Ok(Pointer::from(lhs_eval < rhs_eval)),
-        Operation::LsEq => Ok(Pointer::from(lhs_eval <= rhs_eval)),
-        Operation::Gr => Ok(Pointer::from(lhs_eval > rhs_eval)),
-        Operation::GrEq => Ok(Pointer::from(lhs_eval >= rhs_eval)),
+        Operation::Lt => Ok(Pointer::from(lhs_eval < rhs_eval)),
+        Operation::Le => Ok(Pointer::from(lhs_eval <= rhs_eval)),
+        Operation::Gt => Ok(Pointer::from(lhs_eval > rhs_eval)),
+        Operation::Ge => Ok(Pointer::from(lhs_eval >= rhs_eval)),
         Operation::Arrow => todo!(),
     }
 }
@@ -144,20 +148,23 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                     };
                 let condition_evaluated = inner_interpret(condition, state.clone())?;
                 // println!("{condition_evaluated:?}");
-                let bool = condition_evaluated.with_ref(Value::bool) ;
+                let bool = condition_evaluated.with_ref(Value::bool);
                 if bool == Boolean::True {
                     inner_interpret(body, state)
                 } else if let (Boolean::Maybe, Some(body)) = (bool, args.get(3)) {
                     inner_interpret(body, state)
-                } else { 
-                    args.get(2).map_or(Ok(Value::empty_object().into()), |else_statement| inner_interpret(else_statement, state))
+                } else {
+                    match args.get(2) {
+                        Some(else_statement) => inner_interpret(else_statement, state),
+                        None => Ok(state.borrow().undefined.clone())
+                    }
                 }
             }
             Value::Keyword(Keyword::Delete) => {
                 if let [Syntax::Ident(key)] = args {
                     state.borrow_mut().delete(key.clone());
                 }
-                Ok(Value::empty_object().into())
+                Ok(state.borrow().undefined.clone())
             }
             Value::Keyword(Keyword::Function) => {
                 let [Syntax::Ident(name), args, body] = args else {
@@ -178,7 +185,7 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                 state
                     .borrow_mut()
                     .insert(name.clone(), Pointer::from(inner_val));
-                Ok(Value::empty_object().into())
+                Ok(state.borrow().undefined.clone())
             }
             Value::Keyword(Keyword::Eval) => {
                 let [body] = args else {
@@ -209,7 +216,7 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                     let arg_eval = if let Some(syn) = args.get(idx) {
                         inner_interpret(syn, state.clone())?
                     } else {
-                        Pointer::from(Value::empty_object())
+                        state.borrow().undefined.clone()
                     };
                     inner_state.insert(ident.clone(), arg_eval);
                 }

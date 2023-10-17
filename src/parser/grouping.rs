@@ -40,10 +40,10 @@ fn grab_op<T: Iterator<Item = Token>>(
         Some(Token::SlashEq) => Operation::DivEq,
         Some(Token::Percent) => Operation::Mod,
         Some(Token::PercentEq) => Operation::ModEq,
-        Some(Token::LCaret) => Operation::Ls,
-        Some(Token::LCaretEq) => Operation::LsEq,
-        Some(Token::RCaret) => Operation::Gr,
-        Some(Token::RCaretEq) => Operation::GrEq,
+        Some(Token::LCaret) => Operation::Lt,
+        Some(Token::LCaretEq) => Operation::Le,
+        Some(Token::RCaret) => Operation::Gt,
+        Some(Token::RCaretEq) => Operation::Ge,
         Some(Token::Dot) => Operation::Dot,
         Some(Token::And) => Operation::And,
         Some(Token::Or) => Operation::Or,
@@ -96,7 +96,7 @@ fn inner_group(src: Vec<OpGroup>, mut tail: Syntax, val: u8) -> SResult<(Vec<OpG
 /// if `op` is `->`, try to make it into a function
 fn make_operation(left: Syntax, op: Operation, right: Syntax) -> SResult<Syntax> {
     if op == Operation::Arrow {
-        println!("{left:?} -> {right:?}");
+        // println!("{left:?} -> {right:?}");
         let input = match left {
             Syntax::Block(vals) => vals
                 .into_iter()

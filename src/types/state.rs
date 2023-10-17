@@ -10,6 +10,7 @@ use core::f64::consts as f64;
 pub struct State {
     current: HashMap<Rc<str>, Pointer>,
     parent: Option<RcMut<State>>,
+    pub undefined: Pointer,
 }
 
 macro_rules! kw {
@@ -21,6 +22,7 @@ macro_rules! kw {
 impl State {
     pub fn new() -> Self {
         let mut current = HashMap::new();
+        let undefined = Pointer::ConstConst(Rc::new(Value::empty_object()));
         kw!(current "🥧" => f64::PI);
         kw!(current "delete" => Keyword::Delete);
         kw!(current "const" => Keyword::Const);
@@ -30,18 +32,21 @@ impl State {
         kw!(current "true" => true);
         kw!(current "false" => false);
         kw!(current "maybe" => Boolean::Maybe);
-        kw!(current "undefined" => Value::empty_object());
         kw!(current "infinity" => Value::Number(f64::INFINITY));
         kw!(current "∞" => Value::Number(f64::INFINITY));
+        current.insert("undefined".into(), undefined.clone());
         Self {
             current,
             parent: None,
+            undefined,
         }
     }
 
     pub fn from_parent(parent: Rc<RefCell<Self>>) -> Self {
+        let undefined = parent.borrow().undefined.clone();
         Self {
             current: HashMap::new(),
+            undefined,
             parent: Some(parent),
         }
     }
@@ -77,12 +82,17 @@ impl State {
     }
 
     pub fn delete(&mut self, k: Rc<str>) {
-        if self.current.contains_key(&k) {
-            self.current
-                .insert(k.clone(), Pointer::from(Value::empty_object()));
-        }
-        if let Some(parent) = &self.parent {
-            parent.borrow_mut().delete(k);
+        match self.current.entry(k.clone()) {
+            std::collections::hash_map::Entry::Occupied(mut e) => {
+                e.insert(self.undefined.clone());
+            }
+            std::collections::hash_map::Entry::Vacant(e) => {
+                if let Some(parent) = &self.parent {
+                    parent.borrow_mut().delete(k);
+                } else {
+                    e.insert(self.undefined.clone());
+                }
+            }
         }
     }
 }

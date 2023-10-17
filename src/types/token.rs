@@ -1,9 +1,18 @@
-use std::rc::Rc;
+use std::{fmt::Display, rc::Rc};
 
 #[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Clone)]
 pub enum StringSegment {
     String(Rc<str>),
     Ident(Rc<str>),
+}
+
+impl Display for StringSegment {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Ident(ident) => write!(f, "${{{ident}}}"),
+            Self::String(str) => write!(f, "{str}"),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]

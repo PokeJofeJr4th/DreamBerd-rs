@@ -83,13 +83,13 @@ fn consume_whitespace<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) {
 
 fn consume_bang<T: Iterator<Item = Token>>(syn: Syntax, tokens: &mut Peekable<T>) -> Syntax {
     match tokens.peek() {
-        Some(Token::Bang(_)) => {
+        Some(&Token::Bang(q)) => {
             tokens.next();
-            syn
+            Syntax::Statement(false, Box::new(syn), q)
         }
         Some(&Token::Question(q)) => {
             tokens.next();
-            Syntax::Debug(Box::new(syn), q)
+            Syntax::Statement(true, Box::new(syn), q)
         }
         _ => syn,
     }
@@ -215,7 +215,9 @@ fn optimize(syn: Syntax) -> Syntax {
                 Syntax::Block(new_inner)
             }
         }
-        Syntax::Debug(inner, lvl) => Syntax::Debug(Box::new(optimize(*inner)), lvl),
+        Syntax::Statement(is_debug, inner, lvl) => {
+            Syntax::Statement(is_debug, Box::new(optimize(*inner)), lvl)
+        }
         Syntax::Negate(inner) => Syntax::Negate(Box::new(optimize(*inner))),
         basic @ (Syntax::Ident(_) | Syntax::String(_)) => basic,
     }
