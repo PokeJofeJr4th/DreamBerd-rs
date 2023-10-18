@@ -320,7 +320,7 @@ score(9)! // Set the value
 score()? // Get the value (and print it)
 ```
 
-### When
+### Time Travel
 
 In case you really need to vary a variable, the `when` keyword lets you check a variable each time it mutates.
 
@@ -331,8 +331,6 @@ when (health == 0) {
 }
 ```
 
-### Previous
-
 The `previous` keyword lets you see into the past!
 
 Use it to get the previous value of a variable.
@@ -342,6 +340,17 @@ const var score = 5!
 score += 1!
 print(score)! // 6
 print(previous(score))! // 5
+```
+
+Similarly, the next keyword lets you see into the future!
+
+```c
+const var score = 5!
+const var next_score = next(score)!
+score += 1!
+score += 10!
+print(next_score)! // 6
+print(score)! // 16
 ```
 
 ## Standard Library
