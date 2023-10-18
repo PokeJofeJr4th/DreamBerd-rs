@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use crate::types::prelude::*;
 
@@ -137,15 +137,43 @@ fn interpret_operation(
         Operation::Ge => Pointer::from(lhs_eval >= rhs_eval),
         Operation::Arrow => todo!(),
     };
-    if let Some(val) = ret.as_var() {
-        let listeners = val.borrow().event_listeners.clone();
-        for (listener, state) in listeners {
-            inner_interpret(&listener, state)?;
-        }
+    if let (
+        Some(val),
+        Operation::AddEq
+        | Operation::SubEq
+        | Operation::Equal(1)
+        | Operation::MulEq
+        | Operation::DivEq
+        | Operation::ModEq,
+    ) = (ret.as_var(), op)
+    {
+        update_pointer(&val)?;
     }
     Ok(ret)
 }
 
+fn update_pointer(val: &RefCell<MutValue>) -> SResult<()> {
+    let listeners = val.borrow().event_listeners.clone();
+    for (listener, state) in listeners {
+        inner_interpret(&listener, state)?;
+    }
+    let next_handles = val.borrow_mut().flush_next_handles();
+    let new_value = val.borrow().value.clone();
+    for handle in next_handles {
+        match handle.as_var() {
+            Some(handle_var) => {
+                // println!("{handle_var:?}");
+                handle_var.borrow_mut().assign(new_value.clone());
+                // println!("{handle_var:?}");
+                update_pointer(&handle_var)?;
+            }
+            None => return Err(String::from("Can't assign to a constant value")),
+        }
+    }
+    Ok(())
+}
+
+#[allow(clippy::too_many_lines)]
 fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> SResult<Pointer> {
     func.with_ref(|func_eval|
         match func_eval {
@@ -180,6 +208,17 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                     Some(eval) => Ok(eval.borrow().previous.as_ref().map_or_else(move || state.borrow().undefined.clone(), |prev| Pointer::ConstConst(Rc::new(prev.clone())))),
                     None => Ok(state.borrow().undefined.clone())
                 }
+            }
+            Value::Keyword(Keyword::Next) => {
+                let [arg] = args else { return Err(String::from("`next` keyword requires one argument")) };
+                let evaluated = inner_interpret(arg, state)?;
+                let next_ptr = Pointer::ConstVar(rc_mut_new(Value::empty_object().into()));
+                evaluated.as_var().map_or_else(|| Err(String::from("`next` keyword requires a mutable value")), |eval| {
+                        eval.borrow_mut().add_next_handle(next_ptr.clone());
+                        // println!("{eval:?}");
+                        // println!("{next_ptr:?}");
+                        Ok(next_ptr)
+                    })
             }
             Value::Keyword(Keyword::When) => {
                 let [condition, body] = args else { return Err(String::from("`when` keyword requires two arguments; condition and body")) };

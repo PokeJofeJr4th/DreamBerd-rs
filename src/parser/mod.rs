@@ -28,7 +28,7 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
                         tokens.next();
                         consume_whitespace(tokens);
                         let input = get_tuple(tokens)?;
-                        Ok(consume_bang(Syntax::Call(id, input), tokens))
+                        Ok(Syntax::Call(id, input))
                     }
                     Some(Token::Colon) => {
                         tokens.next();

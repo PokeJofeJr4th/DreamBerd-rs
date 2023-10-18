@@ -10,7 +10,7 @@ pub mod prelude {
     use std::cell::RefCell;
     use std::rc::Rc;
 
-    pub use super::pointer::Pointer;
+    pub use super::pointer::{MutValue, Pointer};
     pub use super::state::State;
     pub use super::syntax::{Operation, Syntax, VarType};
     pub use super::token::{StringSegment, Token};

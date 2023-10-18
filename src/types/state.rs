@@ -31,6 +31,7 @@ impl State {
         kw!(current "if" => Keyword::If);
         kw!(current "infinity" => Value::Number(f64::INFINITY));
         kw!(current "maybe" => Boolean::Maybe);
+        kw!(current "next" => Keyword::Next);
         kw!(current "previous" => Keyword::Previous);
         kw!(current "true" => true);
         kw!(current "var" => Keyword::Var);

@@ -88,7 +88,7 @@ impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Boolean(b) => write!(f, "{b}"),
-            Self::String(str) => write!(f, "{str:?}"),
+            Self::String(str) => write!(f, "{str}"),
             Self::Number(num) => write!(f, "{num}"),
             Self::Object(obj) => {
                 let mut map = f.debug_struct("object");
@@ -378,6 +378,7 @@ pub enum Keyword {
     Eval,
     Function,
     If,
+    Next,
     Previous,
     Var,
     When,
@@ -391,6 +392,7 @@ impl Display for Keyword {
             Self::Delete => write!(f, "delete"),
             Self::Function => write!(f, "function"),
             Self::If => write!(f, "if"),
+            Self::Next => write!(f, "next"),
             Self::Previous => write!(f, "previous"),
             Self::Var => write!(f, "var"),
             Self::When => write!(f, "when"),

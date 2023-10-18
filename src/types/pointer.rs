@@ -19,11 +19,12 @@ pub enum Pointer {
     VarVar(RcMut<RcMut<MutValue>>),
 }
 
-#[derive(PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct MutValue {
     pub value: Value,
     pub previous: Option<Value>,
     pub event_listeners: Vec<(Syntax, RcMut<State>)>,
+    next_handles: Vec<Pointer>,
 }
 
 impl MutValue {
@@ -34,6 +35,14 @@ impl MutValue {
     pub fn add_event_listener(&mut self, listener: Syntax, state: RcMut<State>) {
         self.event_listeners.push((listener, state));
     }
+
+    pub fn add_next_handle(&mut self, handle: Pointer) {
+        self.next_handles.push(handle);
+    }
+
+    pub fn flush_next_handles(&mut self) -> Vec<Pointer> {
+        core::mem::take(&mut self.next_handles)
+    }
 }
 
 impl From<Value> for MutValue {
@@ -42,6 +51,7 @@ impl From<Value> for MutValue {
             value,
             previous: None,
             event_listeners: Vec::new(),
+            next_handles: Vec::new(),
         }
     }
 }
