@@ -342,7 +342,7 @@ print(score)! // 6
 print(previous(score))! // 5
 ```
 
-Similarly, the next keyword lets you see into the future!
+Similarly, the `next` keyword lets you see into the future!
 
 ```c
 const var score = 5!

@@ -91,11 +91,15 @@ impl Display for Value {
             Self::String(str) => write!(f, "{str}"),
             Self::Number(num) => write!(f, "{num}"),
             Self::Object(obj) => {
-                let mut map = f.debug_struct("object");
-                for (k, v) in obj {
-                    map.field(&format!("{k}"), &format!("{v}"));
+                if obj.is_empty() {
+                    write!(f, "undefined")
+                } else {
+                    let mut map = f.debug_struct("object");
+                    for (k, v) in obj {
+                        map.field(&format!("{k}"), &format!("{v}"));
+                    }
+                    map.finish()
                 }
-                map.finish()
             }
             Self::Function(args, body) => {
                 write!(f, "{args:?} -> {body}")
