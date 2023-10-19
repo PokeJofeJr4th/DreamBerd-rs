@@ -1,4 +1,8 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::{BTreeMap, HashMap},
+    rc::Rc,
+};
 
 use lazy_regex::regex;
 
@@ -24,6 +28,8 @@ impl State {
         let mut current = HashMap::new();
 
         kw!(current "🥧" => f64::PI);
+        kw!(current "class" => Keyword::Class);
+        kw!(current "className" => Keyword::Class);
         kw!(current "const" => Keyword::Const);
         kw!(current "delete" => Keyword::Delete);
         kw!(current "eval" => Keyword::Eval);
@@ -32,6 +38,7 @@ impl State {
         kw!(current "infinity" => Value::Number(f64::INFINITY));
         kw!(current "maybe" => Boolean::Maybe);
         kw!(current "next" => Keyword::Next);
+        kw!(current "new" => Keyword::New);
         kw!(current "previous" => Keyword::Previous);
         kw!(current "true" => true);
         kw!(current "var" => Keyword::Var);
@@ -99,5 +106,12 @@ impl State {
                 }
             }
         }
+    }
+
+    pub fn locals_to_object(&self) -> BTreeMap<Value, Pointer> {
+        self.current
+            .iter()
+            .map(|(k, v)| (Value::String(k.clone()), v.clone()))
+            .collect()
     }
 }

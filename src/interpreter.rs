@@ -250,6 +250,33 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                     .insert(name.clone(), Pointer::from(inner_val));
                 Ok(state.borrow().undefined.clone())
             }
+            Value::Keyword(Keyword::Class) => {
+                let [Syntax::Ident(name), Syntax::Block(body)] = args else {
+                    return Err(format!("Invalid arguments for `class`: `{args:?}`; expected name and body"))
+                };
+                let inner_value = Value::Class(body.clone());
+                state.borrow_mut().insert(name.clone(), Pointer::ConstVar(rc_mut_new(inner_value.into())));
+                Ok(state.borrow().undefined.clone())
+            }
+            Value::Keyword(Keyword::New) => {
+                let [class] = args else { 
+                    return Err(format!("Invalid arguments for `new`: `{args:?}`; expected a class"))
+                };
+                let class_pointer = inner_interpret(class, state.clone())?;
+                let Some(class_ref) = class_pointer.as_var()  else {
+                    return Err(format!("Expected a mutable reference to a class; got `{class_pointer:?}`"))
+                };
+                class_ref.borrow_mut().assign(Value::empty_object());
+                let Some(Value::Class(class_body)) = class_ref.borrow().previous.clone() else {
+                    return Err(format!("Expected a mutable reference to a class; got `{class_ref:?}`"))
+                };
+                let inner_state = rc_mut_new(State::from_parent(state));
+                for statement in class_body {
+                    inner_interpret(&statement, inner_state.clone())?;
+                }
+                let inner_obj = inner_state.borrow().locals_to_object();
+                Ok(Pointer::from(Value::Object(inner_obj)))
+            }
             Value::Keyword(Keyword::Eval) => {
                 let [body] = args else {
                     return Err(format!("You can only `eval` one thing at a time; got `{args:?}`"));

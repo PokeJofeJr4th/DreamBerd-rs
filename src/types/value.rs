@@ -44,6 +44,7 @@ pub enum Value {
     Number(f64),
     Object(BTreeMap<Value, Pointer>),
     Function(Vec<Rc<str>>, Syntax),
+    Class(Vec<Syntax>),
     Keyword(Keyword),
 }
 
@@ -96,7 +97,7 @@ impl Display for Value {
                 } else {
                     let mut map = f.debug_struct("object");
                     for (k, v) in obj {
-                        map.field(&format!("{k}"), &format!("{v}"));
+                        map.field(&format!("{k}"), v);
                     }
                     map.finish()
                 }
@@ -104,6 +105,10 @@ impl Display for Value {
             Self::Function(args, body) => {
                 write!(f, "{args:?} -> {body}")
             }
+            Self::Class(syn) => {
+                write!(f, "class {{{syn:?}}}")
+            }
+
             Self::Keyword(kw) => write!(f, "{kw}"),
         }
     }
@@ -120,14 +125,11 @@ impl Hash for Value {
                 let mut vec: Vec<_> = obj.iter().collect::<Vec<_>>();
                 vec.sort_by_key(|&(k, _)| k);
                 for (k, v) in vec {
-                    k.hash(state);
-                    v.hash(state);
+                    (k, v).hash(state);
                 }
             }
-            Self::Function(inputs, content) => {
-                inputs.hash(state);
-                content.hash(state);
-            }
+            Self::Function(inputs, content) => (inputs, content).hash(state),
+            Self::Class(body) => body.hash(state),
             Self::Keyword(keyword) => keyword.hash(state),
         }
     }
@@ -377,12 +379,14 @@ impl From<Boolean> for Value {
 
 #[derive(PartialEq, Eq, Debug, Hash, Clone, Copy, PartialOrd, Ord)]
 pub enum Keyword {
+    Class,
     Const,
     Delete,
     Eval,
     Function,
     If,
     Next,
+    New,
     Previous,
     Var,
     When,
@@ -391,12 +395,14 @@ pub enum Keyword {
 impl Display for Keyword {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Class => write!(f, "class"),
             Self::Const => write!(f, "const"),
             Self::Eval => write!(f, "eval"),
             Self::Delete => write!(f, "delete"),
             Self::Function => write!(f, "function"),
             Self::If => write!(f, "if"),
             Self::Next => write!(f, "next"),
+            Self::New => write!(f, "new"),
             Self::Previous => write!(f, "previous"),
             Self::Var => write!(f, "var"),
             Self::When => write!(f, "when"),

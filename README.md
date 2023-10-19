@@ -287,6 +287,51 @@ You can also set the `call` keyword to a function, which can use the `self` keyw
 my_object.call = ()->{"hello, my name is "+self.name?}!
 ```
 
+### Classes
+
+You can make classes, but you can only ever make one instance of them. This shouldn't affect how most object-oriented programmers work.
+
+```c
+class(Player,{
+   const var health = 10!
+})!
+
+const var player1 = new Player()!
+const var player2 = new Player()! //Error: Can't have more than one 'Player' instance!
+```
+
+This is how you could do this:
+
+```c
+class(PlayerMaker, {
+    const const makePlayer = ()->{
+        class(Player, {
+            const var health = 10!
+        })!
+        new(Player)
+    }
+})!
+
+const const playerMaker = new(PlayerMaker)!
+const const makePlayer = playerMaker.makePlayer!
+const var player1 = makePlayer()!
+const var player2 = makePlayer()!
+```
+
+### Class Names
+
+For maximum compatibility with other languages, you can alternatively use the `className` keyword when making classes.
+
+This makes things less complicated.
+
+```c
+className(Player, {
+    const var health = 10!
+})!
+```
+
+In response to some recent criticism about this design decision, we would like to remind you that this is part of the JavaScript specification, and therefore - out of our control.
+
 ## Evaluation
 
 DreamBerd provides a built-in function to interpret DreamBerd code at runtime. This is most useful when combined with string interpolation.
