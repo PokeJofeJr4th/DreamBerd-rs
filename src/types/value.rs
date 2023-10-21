@@ -1,7 +1,7 @@
 use std::{
     cmp::Ordering,
     collections::BTreeMap,
-    fmt::Display,
+    fmt::{Debug, Display},
     hash::Hash,
     ops::{Add, BitAnd, BitOr, Div, Mul, Neg, Rem, Sub},
     rc::Rc,
@@ -36,7 +36,7 @@ impl From<bool> for Boolean {
     }
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Clone)]
 #[repr(C)]
 pub enum Value {
     Boolean(Boolean),
@@ -82,6 +82,15 @@ impl Ord for Value {
             return ord;
         };
         todo!()
+    }
+}
+
+impl Debug for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::String(str) => write!(f, "{str:?}"),
+            this => write!(f, "{this}"),
+        }
     }
 }
 

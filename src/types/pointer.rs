@@ -59,10 +59,10 @@ impl From<Value> for MutValue {
 impl Debug for Pointer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::ConstConst(val) => write!(f, "ConstConst({val})"),
-            Self::ConstVar(val) => write!(f, "ConstVar({})", val.borrow().value),
-            Self::VarConst(val) => write!(f, "VarConst({})", val.borrow()),
-            Self::VarVar(val) => write!(f, "VarVar({})", val.borrow().borrow().value),
+            Self::ConstConst(val) => write!(f, "const const ({val:?})"),
+            Self::ConstVar(val) => write!(f, "const var ({:?})", val.borrow().value),
+            Self::VarConst(val) => write!(f, "var const ({:?})", val.borrow()),
+            Self::VarVar(val) => write!(f, "var var ({:?})", val.borrow().borrow().value),
         }
     }
 }
