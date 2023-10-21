@@ -296,8 +296,8 @@ class(Player,{
    const var health = 10!
 })!
 
-const var player1 = new Player()!
-const var player2 = new Player()! //Error: Can't have more than one 'Player' instance!
+const var player1 = new(Player)!
+const var player2 = new(Player)! //Error: Can't have more than one 'Player' instance!
 ```
 
 This is how you could do this:
