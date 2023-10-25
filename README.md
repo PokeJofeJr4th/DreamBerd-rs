@@ -13,15 +13,15 @@ DreamBerd provides a convenient mode to execute code within the terminal. The pr
 Every statement ends with an exclamation mark! If you're feeling extra, you can even use multiple!!!
 
 ```c
-print("Hello World!")!
+print "Hello World!"!
 
-print("Hi!!")!!!!
+print "Hi!!"!!!!
 ```
 
 If you're unsure, that's okay too! You can also use question marks? This will print debug information to the console? The more question marks, the more detailed the information???
 
 ```c
-print("uh... hi??")???
+print "uh... hi??"???
 ```
 
 ## Negation
@@ -120,9 +120,9 @@ DreamBerd has a simple `if` statement:
 
 ```c
 if(true ===== false,
-    print("true is false"),
-    print("true is not false"),
-    print("true might be false")
+    print "true is false",
+    print "true is not false",
+    print "true might be false"
 )!
 ```
 
@@ -133,7 +133,7 @@ This is actually a function, so it can be assigned:
 ```c
 const const the_if_statement = if!
 
-the_if_statement(true ==== false, print("true is false"))!
+the_if_statement(true ==== false, print "true is false")!
 ```
 
 ## Strings
@@ -156,15 +156,15 @@ Please remember to use your regional currency when interpolating strings.
 
 ```c
 const const name: String = "world"!
-print("Hello ${name}!")!
-print("Hello £{name}!")!
-print("Hello ¥{name}!")!
+print "Hello ${name}!"!
+print "Hello £{name}!"!
+print "Hello ¥{name}!"!
 ```
 
 And make sure to follow your local typographical norms
 
 ```c
-print("Hello {name}€")!
+print "Hello {name}€"!
 ```
 
 ## Arithmetic
@@ -248,19 +248,39 @@ Alternatively, you can use the arrow syntax
 const const does_she_really_like_you = ()->{maybe}!
 ```
 
+### Function Composition
+
+Functions can be composed by chaining calls. When omitting parentheses, only two function calls are executed. To use the function more times, use parentheses.
+
+```c
+const const double = x->{x+x}!
+
+double double 4 ? // 16
+
+double double (double double 4)? // 64
+```
+
+Functions can also be composed using multiplication.
+
+```c
+const const quad = double * double!
+quad 4 ? // 16
+quad quad 4? // 64
+```
+
 ## Delete
 
 To avoid confusion, the delete statement only works with identifiers like variables, numbers, strings, and booleans.
 
 ```c
-delete(3)!
+delete 3!
 2+1 === 3? // false
 ```
 
 DreamBerd is a multi-paradigm programming language, which means that you can delete the keywords and paradigms you don't like.
 
 ```c
-delete(maybe)!!!
+delete maybe!!!
 const const is_raining = maybe!
 is_raining? // undefined
 ```
@@ -268,7 +288,7 @@ is_raining? // undefined
 When perfection is achieved and there is nothing left to delete, you can do this:
 
 ```c
-delete(delete)!
+delete delete!
 ```
 
 ## Objects
@@ -295,8 +315,8 @@ class(Player,{
    const var health = 10!
 })!
 
-const var player1 = new(Player)!
-const var player2 = new(Player)! //Error: Can't have more than one 'Player' instance!
+const var player1 = new Player!
+const var player2 = new Player! //Error: Can't have more than one 'Player' instance!
 ```
 
 This is how you could do this:
@@ -307,14 +327,13 @@ class(PlayerMaker, {
         class(Player, {
             const var health = 10!
         })!
-        new(Player)
+        new Player
     }
 })!
 
-const const playerMaker = new(PlayerMaker)!
-const const makePlayer = playerMaker.makePlayer!
-const var player1 = makePlayer()!
-const var player2 = makePlayer()!
+const const playerMaker = new PlayerMaker!
+const var player1 = (playerMaker.makePlayer)()!
+const var player2 = (playerMaker.makePlayer)()!
 ```
 
 ### Class Names
@@ -337,8 +356,8 @@ DreamBerd provides a built-in function to interpret DreamBerd code at runtime. T
 
 ```c
 const const value: i32 = 9!
-const const square = x->eval("${x} * ${x}")!
-square("value")? // 9
+const const square = x->(eval "${x} * ${x}")!
+square "value"? // 9
 ```
 
 It's important to note that this will propagate errors from parsing or interepreting this code up to the caller.
@@ -352,15 +371,15 @@ Lots of popular languages use so-called "zero-cost abstractions". DreamBerd inst
 To use a signal, use `use`.
 
 ```c
-const var score = use(0)!
+const var score = use 0!
 ```
 
 In DreamBerd, you can set (and get) signals with just one function:
 
 ```c
-const var score = use(0)!
+const var score = use 0!
 
-score(9)! // Set the value
+score 9! // Set the value
 score()? // Get the value (and print it)
 ```
 
@@ -370,9 +389,9 @@ In case you really need to vary a variable, the `when` keyword lets you check a 
 
 ```c
 const var health = 10!
-when (health == 0) {
-   print("You lose")!
-}
+when (health == 0, {
+   print "You lose"!
+})!
 ```
 
 The `previous` keyword lets you see into the past!
@@ -382,19 +401,19 @@ Use it to get the previous value of a variable.
 ```c
 const var score = 5!
 score += 1!
-print(score)! // 6
-print(previous(score))! // 5
+print score! // 6
+print previous score! // 5
 ```
 
 Similarly, the `next` keyword lets you see into the future!
 
 ```c
 const var score = 5!
-const var next_score = next(score)!
+const var next_score = next score!
 score += 1!
 score += 10!
-print(next_score)! // 6
-print(score)! // 16
+print next_score! // 6
+print score! // 16
 ```
 
 ## Standard Library
@@ -431,10 +450,10 @@ const const identity:Fn<T> = t:T->t!
 const const bool:Fn<T> = o:T->if(o,true,false,maybe)!
 
 const const db:Fn<_> = ()->{
-    print("   ___                     ___             __  ___  ____")!
-    print("  / _ \_______ ___ ___ _  / _ )___ _______/ / / _ \/ __/")!
-    print(" / // / __/ -_) _ `/  ' \/ _  / -_) __/ _  / / , _/\ \ ")!
-    print("/____/_/  \__/\_,_/_/_/_/____/\__/_/  \_,_/ /_/|_/___/")!
+    print"   ___                     ___             __  ___  ____"!
+    print"  / _ \_______ ___ ___ _  / _ )___ _______/ / / _ \/ __/"!
+    print" / // / __/ -_) _ `/  ' \/ _  / -_) __/ _  / / , _/\ \ "!
+    print"/____/_/  \__/\_,_/_/_/_/____/\__/_/  \_,_/ /_/|_/___/"!
 }!
 
 ```

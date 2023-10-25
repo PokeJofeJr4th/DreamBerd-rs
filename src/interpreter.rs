@@ -24,7 +24,7 @@ pub fn inner_interpret(src: &Syntax, state: RcMut<State>) -> SResult<Pointer> {
             }
             Ok(evaluated)
         }
-        Syntax::Negate(content) => {
+        Syntax::UnaryOperation(UnaryOperation::Negate, content) => {
             let evaluated = inner_interpret(content, state)?;
             Ok(-evaluated)
         }
@@ -34,12 +34,13 @@ pub fn inner_interpret(src: &Syntax, state: RcMut<State>) -> SResult<Pointer> {
         //     interpret_function(&func, args, state)
         // }
         Syntax::UnaryOperation(unary @ (UnaryOperation::Increment | UnaryOperation::Decrement), operand) => {
-            let mut operand_ptr = inner_interpret(operand, state.clone())?;
+            let mut operand_ptr = inner_interpret(operand, state)?;
             match unary {
                 UnaryOperation::Decrement => operand_ptr -= 1.0.into(),
                 UnaryOperation::Increment => operand_ptr += 1.0.into(),
+                _ => unreachable!()
             }
-            Ok(state.borrow().undefined.clone())
+            Ok(operand_ptr)
         }
         Syntax::Block(statements) => {
             let state = rc_mut_new(State::from_parent(state));
@@ -73,8 +74,8 @@ pub fn inner_interpret(src: &Syntax, state: RcMut<State>) -> SResult<Pointer> {
             }
             Ok(Pointer::from(string_buf.as_ref()))
         }
-        Syntax::Call(func, args) => {
-            let func = state.borrow_mut().get(func.clone());
+        Syntax::UnaryOperation(UnaryOperation::Call(args), func) => {
+            let func = inner_interpret(func, state.clone())?;
             interpret_function(&func, args, state)
         }
         Syntax::Ident(ident) => Ok(state.borrow_mut().get(ident.clone())),
@@ -237,7 +238,7 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                 let idents = find_idents_in_syntax(condition);
                 for ident in idents {
                     let Some(var) = state.borrow_mut().get(ident).as_var() else { continue };
-                    var.borrow_mut().add_event_listener(Syntax::Call("if".into(), vec![condition.clone(), body.clone()]), state.clone());
+                    var.borrow_mut().add_event_listener(Syntax::UnaryOperation(UnaryOperation::Call(vec![condition.clone(), body.clone()]), Box::new(Syntax::Ident("if".into()))), state.clone());
                 }
                 Ok(state.borrow().undefined.clone())
             }
@@ -324,7 +325,11 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                 }
                 inner_interpret(body, rc_mut_new(inner_state))
             }
-            other => Err(format!("`{other}` is not a function")),
+            other => {
+                let [arg] = args else { return Err(format!("`{other}` is not a function")) };
+                let rhs = inner_interpret(arg, state)?;
+                Ok((other.clone() * rhs.clone_inner()).into())
+            },
         }
     )
 }
@@ -333,12 +338,11 @@ fn find_idents_in_syntax(syn: &Syntax) -> Vec<Rc<str>> {
     match syn {
         Syntax::Ident(id) => vec![id.clone()],
         Syntax::Block(stmts) => stmts.iter().flat_map(find_idents_in_syntax).collect(),
-        Syntax::Call(func, args) => args
-            .iter()
+        Syntax::UnaryOperation(UnaryOperation::Call(args), func) => args
+            .iter().chain(std::iter::once(&**func))
             .flat_map(find_idents_in_syntax)
-            .chain(std::iter::once(func.clone()))
             .collect(),
-        Syntax::Negate(syn) => find_idents_in_syntax(syn),
+        Syntax::UnaryOperation(UnaryOperation::Negate, syn) => find_idents_in_syntax(syn),
         Syntax::Operation(lhs, _, rhs) => find_idents_in_syntax(lhs)
             .into_iter()
             .chain(find_idents_in_syntax(rhs))

@@ -6,7 +6,7 @@ use super::{consume_whitespace, inner_parse};
 
 #[derive(Debug, Clone)]
 enum GroupThingieEnum {
-    Syntax(Syntax),
+    Syntax(Syntax, u8),
     Operation(Operation, u8),
     Unary(UnaryOperation, u8),
 }
@@ -15,9 +15,10 @@ pub(super) fn parse_group<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -
     let new_toks = fancify_toks(tokens)?;
     let max_spc = new_toks
         .iter()
-        .filter_map(|group| match group {
-            GroupThingieEnum::Unary(_, spc) | GroupThingieEnum::Operation(_, spc) => Some(spc),
-            GroupThingieEnum::Syntax(_) => None,
+        .map(|group| match group {
+            GroupThingieEnum::Unary(_, spc)
+            | GroupThingieEnum::Operation(_, spc)
+            | GroupThingieEnum::Syntax(_, spc) => spc,
         })
         .max()
         .copied()
@@ -34,14 +35,20 @@ fn fancify_toks<T: Iterator<Item = Token>>(
     loop {
         let mut whitespace = consume_whitespace(tokens);
         match tokens.peek() {
-            Some(Token::TackTack) => toks.push(GroupThingieEnum::Unary(
-                UnaryOperation::Decrement,
-                whitespace,
-            )),
-            Some(Token::PlusPlus) => toks.push(GroupThingieEnum::Unary(
-                UnaryOperation::Increment,
-                whitespace,
-            )),
+            Some(Token::TackTack) => {
+                tokens.next();
+                toks.push(GroupThingieEnum::Unary(
+                    UnaryOperation::Decrement,
+                    whitespace,
+                ));
+            }
+            Some(Token::PlusPlus) => {
+                tokens.next();
+                toks.push(GroupThingieEnum::Unary(
+                    UnaryOperation::Increment,
+                    whitespace,
+                ));
+            }
             Some(
                 Token::RParen
                 | Token::Bang(_)
@@ -59,10 +66,10 @@ fn fancify_toks<T: Iterator<Item = Token>>(
                 } else {
                     let inner = inner_parse(tokens)?;
                     if matches!(inner, Syntax::Statement(..)) {
-                        toks.push(GroupThingieEnum::Syntax(inner));
+                        toks.push(GroupThingieEnum::Syntax(inner, whitespace));
                         break;
                     }
-                    toks.push(GroupThingieEnum::Syntax(inner));
+                    toks.push(GroupThingieEnum::Syntax(inner, whitespace));
                 }
             }
         }
@@ -76,23 +83,27 @@ fn inner_parse_group_better<T: Iterator<Item = GroupThingieEnum>>(
 ) -> SResult<Syntax> {
     if spacing == 0 {
         return match tokens.next() {
-            Some(GroupThingieEnum::Syntax(lhs)) => Ok(lhs),
-            // Some(GroupThingieEnum::Unary(UnaryOperation::Call(call), _)) => Ok(Syntax::Block(call)),
+            Some(GroupThingieEnum::Syntax(lhs, _)) => Ok(lhs),
+            Some(GroupThingieEnum::Unary(unary, spc)) => Ok(Syntax::UnaryOperation(
+                unary,
+                Box::new(inner_parse_group_better(tokens, spc + 1)?),
+            )),
             Some(other) => Err(format!("Expected expression; got `{other:?}`")),
             None => Err(String::from("Unexpected EOF")),
         };
     }
     if let Some(GroupThingieEnum::Unary(unary, spc)) = tokens.peek() {
-        let unary = *unary;
+        let unary = unary.clone();
         let spc = *spc;
+        tokens.next();
         return Ok(Syntax::UnaryOperation(
             unary,
-            Box::new(inner_parse_group_better(tokens, spc)?),
+            Box::new(inner_parse_group_better(tokens, spc + 1)?),
         ));
     }
     let rhs = inner_parse_group_better(tokens, spacing - 1)?;
     // println!("{rhs}");
-    match tokens.peek() {
+    let starter_val = match tokens.peek() {
         Some(GroupThingieEnum::Operation(op, spc)) if *spc < spacing => {
             let op = *op;
             tokens.next();
@@ -100,6 +111,20 @@ fn inner_parse_group_better<T: Iterator<Item = GroupThingieEnum>>(
             make_operation(lhs, op, rhs)
         }
         _ => Ok(rhs),
+    }?;
+    match tokens.peek() {
+        Some(GroupThingieEnum::Syntax(_, spc)) if *spc <= spacing => {
+            let Some(GroupThingieEnum::Syntax(func, _)) = tokens.next() else {unreachable!()};
+            let args = match starter_val {
+                Syntax::Block(args) => args,
+                other => vec![other],
+            };
+            Ok(Syntax::UnaryOperation(
+                UnaryOperation::Call(args),
+                Box::new(func),
+            ))
+        }
+        _ => Ok(starter_val),
     }
 }
 

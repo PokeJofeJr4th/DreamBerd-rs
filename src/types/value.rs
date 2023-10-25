@@ -203,6 +203,17 @@ impl Mul for Value {
                 }
                 Self::String(str_buf.into())
             }
+            (Self::Function(lhs_args, lhs), Self::Function(rhs_args, rhs))
+                if lhs_args.len() == 1 =>
+            {
+                Self::Function(
+                    rhs_args,
+                    Syntax::UnaryOperation(
+                        super::UnaryOperation::Call(vec![rhs]),
+                        Box::new(Syntax::Function(lhs_args, Box::new(lhs))),
+                    ),
+                )
+            }
             _ => Self::default(),
         }
     }

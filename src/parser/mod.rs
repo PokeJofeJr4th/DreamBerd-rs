@@ -17,20 +17,16 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
     // println!("{:?}", tokens.peek());
     match tokens.next() {
         Some(Token::String(str)) => Ok(Syntax::String(str)),
-        Some(Token::Tack | Token::Semicolon) => Ok(Syntax::Negate(Box::new(inner_parse(tokens)?))),
+        Some(Token::Semicolon) => Ok(Syntax::UnaryOperation(
+            UnaryOperation::Negate,
+            Box::new(inner_parse(tokens)?),
+        )),
         Some(Token::Ident(id)) => {
-            consume_whitespace(tokens);
             if id.as_ref() == "const" || id.as_ref() == "var" {
+                consume_whitespace(tokens);
                 declare(tokens, &id)
             } else {
                 match tokens.peek() {
-                    // call as a function
-                    Some(Token::LParen) => {
-                        tokens.next();
-                        consume_whitespace(tokens);
-                        let input = get_tuple(tokens)?;
-                        Ok(Syntax::Call(id, input))
-                    }
                     Some(Token::Colon) => {
                         tokens.next();
                         consume_whitespace(tokens);
@@ -199,7 +195,10 @@ fn optimize(syn: Syntax) -> Syntax {
             Syntax::Declare(typ, ident, Box::new(optimize(*inner)))
         }
         Syntax::Function(args, inner) => Syntax::Function(args, Box::new(optimize(*inner))),
-        Syntax::Call(ident, args) => Syntax::Call(ident, args.into_iter().map(optimize).collect()),
+        Syntax::UnaryOperation(UnaryOperation::Call(args), func) => Syntax::UnaryOperation(
+            UnaryOperation::Call(args.into_iter().map(optimize).collect()),
+            Box::new(optimize(*func)),
+        ),
         Syntax::Operation(lhs, op, rhs) => {
             Syntax::Operation(Box::new(optimize(*lhs)), op, Box::new(optimize(*rhs)))
         }
@@ -225,7 +224,6 @@ fn optimize(syn: Syntax) -> Syntax {
         Syntax::Statement(is_debug, inner, lvl) => {
             Syntax::Statement(is_debug, Box::new(optimize(*inner)), lvl)
         }
-        Syntax::Negate(inner) => Syntax::Negate(Box::new(optimize(*inner))),
         basic @ (Syntax::Ident(_) | Syntax::String(_)) => basic,
     }
 }

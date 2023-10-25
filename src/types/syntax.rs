@@ -6,14 +6,12 @@ use super::{StringSegment, Token};
 pub enum Syntax {
     Declare(VarType, Rc<str>, Box<Syntax>),
     Function(Vec<Rc<str>>, Box<Syntax>),
-    Call(Rc<str>, Vec<Syntax>),
     Operation(Box<Syntax>, Operation, Box<Syntax>),
     UnaryOperation(UnaryOperation, Box<Syntax>),
     Ident(Rc<str>),
     String(Vec<StringSegment>),
     Block(Vec<Syntax>),
     Statement(bool, Box<Syntax>, u8),
-    Negate(Box<Syntax>),
 }
 
 impl Display for Syntax {
@@ -25,17 +23,6 @@ impl Display for Syntax {
                     "{content}{}",
                     if *is_debug { "?" } else { "!" }.repeat(*count as usize)
                 )
-            }
-            Self::Call(func, args) => {
-                write!(f, "{func}(")?;
-                let arglen = args.len();
-                for (idx, arg) in args.iter().enumerate() {
-                    write!(f, "{arg}")?;
-                    if idx + 1 != arglen {
-                        write!(f, ", ")?;
-                    }
-                }
-                write!(f, ")")
             }
             Self::Block(statements) => {
                 write!(f, "{{")?;
@@ -58,9 +45,9 @@ impl Display for Syntax {
             Self::Operation(lhs, op, rhs) => {
                 write!(f, "({lhs}{op}{rhs})")
             }
-            // Self::UnaryOperation(UnaryOperation::Call(args), operand) => {
-            //     write!(f, "{operand}({args:?})")
-            // }
+            Self::UnaryOperation(UnaryOperation::Call(args), operand) => {
+                write!(f, "{operand}({args:?})")
+            }
             Self::UnaryOperation(UnaryOperation::Decrement, operand) => {
                 write!(f, "{operand}--")
             }
@@ -70,7 +57,7 @@ impl Display for Syntax {
             Self::Function(args, body) => {
                 write!(f, "{args:?} -> {body}")
             }
-            Self::Negate(inner) => write!(f, ";{inner}"),
+            Self::UnaryOperation(UnaryOperation::Negate, inner) => write!(f, ";{inner}"),
             // other => write!(f, "{other:?}"),
         }
     }
@@ -96,10 +83,12 @@ impl Display for VarType {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum UnaryOperation {
     Increment,
     Decrement,
+    Negate,
+    Call(Vec<Syntax>),
 }
 
 #[derive(PartialEq, Eq, Debug, Hash, Clone, Copy)]
