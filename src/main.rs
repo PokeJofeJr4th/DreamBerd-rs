@@ -57,7 +57,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             let state = rc_mut_new(State::new());
             if let Some(path) = path {
                 let syn = file_to_syntax(&PathBuf::from(path))?;
-                let Syntax::Block(statements) = syn else { panic!() };
+                let statements = match syn {
+                    Syntax::Block(statements) => statements,
+                    other => vec![other],
+                };
                 for statement in statements {
                     inner_interpret(&statement, state.clone())?;
                 }
@@ -73,7 +76,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 match result {
                     Ok(ptr) => {
                         if ptr != state.borrow().undefined {
-                            println!("{ptr}");
+                            println!("{ptr:?}");
                         }
                     }
                     Err(err) => println!("Error: {err}"),

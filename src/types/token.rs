@@ -15,7 +15,7 @@ impl Display for StringSegment {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token {
     Ident(Rc<str>),
     String(Vec<StringSegment>),

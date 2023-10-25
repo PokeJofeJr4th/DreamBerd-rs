@@ -1,6 +1,6 @@
 use std::{fmt::Display, rc::Rc};
 
-use super::StringSegment;
+use super::{StringSegment, Token};
 
 #[derive(PartialEq, Eq, Debug, Hash, Clone)]
 pub enum Syntax {
@@ -8,6 +8,7 @@ pub enum Syntax {
     Function(Vec<Rc<str>>, Box<Syntax>),
     Call(Rc<str>, Vec<Syntax>),
     Operation(Box<Syntax>, Operation, Box<Syntax>),
+    UnaryOperation(UnaryOperation, Box<Syntax>),
     Ident(Rc<str>),
     String(Vec<StringSegment>),
     Block(Vec<Syntax>),
@@ -27,10 +28,10 @@ impl Display for Syntax {
             }
             Self::Call(func, args) => {
                 write!(f, "{func}(")?;
-                let arglen = args.len() - 1;
+                let arglen = args.len();
                 for (idx, arg) in args.iter().enumerate() {
                     write!(f, "{arg}")?;
-                    if idx != arglen {
+                    if idx + 1 != arglen {
                         write!(f, ", ")?;
                     }
                 }
@@ -56,6 +57,15 @@ impl Display for Syntax {
             }
             Self::Operation(lhs, op, rhs) => {
                 write!(f, "({lhs}{op}{rhs})")
+            }
+            // Self::UnaryOperation(UnaryOperation::Call(args), operand) => {
+            //     write!(f, "{operand}({args:?})")
+            // }
+            Self::UnaryOperation(UnaryOperation::Decrement, operand) => {
+                write!(f, "{operand}--")
+            }
+            Self::UnaryOperation(UnaryOperation::Increment, operand) => {
+                write!(f, "{operand}++")
             }
             Self::Function(args, body) => {
                 write!(f, "{args:?} -> {body}")
@@ -84,6 +94,12 @@ impl Display for VarType {
             Self::VarVar => write!(f, "var var"),
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum UnaryOperation {
+    Increment,
+    Decrement,
 }
 
 #[derive(PartialEq, Eq, Debug, Hash, Clone, Copy)]
@@ -131,6 +147,34 @@ impl Display for Operation {
             Self::Le => write!(f, "<="),
             Self::Gt => write!(f, ">"),
             Self::Ge => write!(f, ">="),
+        }
+    }
+}
+
+impl TryFrom<Token> for Operation {
+    type Error = ();
+    fn try_from(value: Token) -> Result<Self, Self::Error> {
+        match value {
+            Token::Equal(val) => Ok(Self::Equal(val)),
+            Token::Plus => Ok(Self::Add),
+            Token::PlusEq => Ok(Self::AddEq),
+            Token::Tack => Ok(Self::Sub),
+            Token::TackEq => Ok(Self::SubEq),
+            Token::Star => Ok(Self::Mul),
+            Token::StarEq => Ok(Self::MulEq),
+            Token::Slash => Ok(Self::Div),
+            Token::SlashEq => Ok(Self::DivEq),
+            Token::Percent => Ok(Self::Mod),
+            Token::PercentEq => Ok(Self::ModEq),
+            Token::Dot => Ok(Self::Dot),
+            Token::And => Ok(Self::And),
+            Token::Or => Ok(Self::Or),
+            Token::Arrow => Ok(Self::Arrow),
+            Token::LCaret => Ok(Self::Lt),
+            Token::LCaretEq => Ok(Self::Le),
+            Token::RCaret => Ok(Self::Gt),
+            Token::RCaretEq => Ok(Self::Ge),
+            _ => Err(()),
         }
     }
 }

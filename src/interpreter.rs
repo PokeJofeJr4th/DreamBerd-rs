@@ -29,6 +29,18 @@ pub fn inner_interpret(src: &Syntax, state: RcMut<State>) -> SResult<Pointer> {
             Ok(-evaluated)
         }
         Syntax::Operation(lhs, op, rhs) => interpret_operation(lhs, *op, rhs, state),
+        // Syntax::UnaryOperation(UnaryOperation::Call(args), operand) => {
+        //     let func = inner_interpret(operand, state.clone())?;
+        //     interpret_function(&func, args, state)
+        // }
+        Syntax::UnaryOperation(unary @ (UnaryOperation::Increment | UnaryOperation::Decrement), operand) => {
+            let mut operand_ptr = inner_interpret(operand, state.clone())?;
+            match unary {
+                UnaryOperation::Decrement => operand_ptr -= 1.0.into(),
+                UnaryOperation::Increment => operand_ptr += 1.0.into(),
+            }
+            Ok(state.borrow().undefined.clone())
+        }
         Syntax::Block(statements) => {
             let state = rc_mut_new(State::from_parent(state));
             let mut iter = statements.iter();

@@ -26,13 +26,12 @@ print("uh... hi??")???
 
 ## Negation
 
-You might be wondering what DreamBerd uses for its negation operator, since most languages use `!`. Don't worry! `;` and `-` both negate the value in front of them.
+You might be wondering what DreamBerd uses for its negation operator, since most languages use `!`. Don't worry! `;` can negate the value in front of it.
 
 ```c
 ;"hello there"? // "ereht olleh"
--true? // false
+;true? // false
 ;1 // -1
--1 // -1
 ```
 
 ## Declarations
@@ -177,10 +176,10 @@ DreamBerd has significant whitespace. Use spacing to specify the order of arithm
 1+2 * 3? // 9
 ```
 
-For operations with the same amount of whitespace, grouping is poorly defined.
+For operations with the same amount of whitespace, grouping is left-associative.
 
 ```c
-1+1*1+1? // 4
+1+1*1+1? // 3
 ```
 
 You can add strings together and multiply them by numbers. Negating a string reverses it.
@@ -188,7 +187,7 @@ You can add strings together and multiply them by numbers. Negating a string rev
 ```c
 "he" + "l"*2 "o" + " " + "world"? // "hello world"
 "johnny"*1.5? // "johnnyjoh"
-"no lemon " + -"no lemon"? // "no lemon nomel on"
+"no lemon " + ;"no lemon"? // "no lemon nomel on"
 ```
 
 ### Dividing by Zero

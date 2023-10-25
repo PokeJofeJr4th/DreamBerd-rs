@@ -2,95 +2,105 @@ use std::iter::Peekable;
 
 use crate::types::prelude::*;
 
-use super::inner_parse;
+use super::{consume_whitespace, inner_parse};
+
+#[derive(Debug, Clone)]
+enum GroupThingieEnum {
+    Syntax(Syntax),
+    Operation(Operation, u8),
+    Unary(UnaryOperation, u8),
+}
 
 pub(super) fn parse_group<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<Syntax> {
-    let mut groups_buf = Vec::new();
-    let tail;
-    loop {
-        if let Some(t) = grab_op(tokens, &mut groups_buf)? {
-            tail = t;
-            break;
-        }
-    }
-    group(groups_buf, tail)
+    let new_toks = fancify_toks(tokens)?;
+    let max_spc = new_toks
+        .iter()
+        .filter_map(|group| match group {
+            GroupThingieEnum::Unary(_, spc) | GroupThingieEnum::Operation(_, spc) => Some(spc),
+            GroupThingieEnum::Syntax(_) => None,
+        })
+        .max()
+        .copied()
+        .unwrap_or(0);
+
+    // println!("{new_toks:?}");
+    inner_parse_group_better(&mut new_toks.into_iter().rev().peekable(), max_spc + 1)
 }
 
-/// get the next operator, including handling unaries
-fn grab_op<T: Iterator<Item = Token>>(
+fn fancify_toks<T: Iterator<Item = Token>>(
     tokens: &mut Peekable<T>,
-    groups_buf: &mut Vec<OpGroup>,
-) -> SResult<Option<Syntax>> {
-    let left = inner_parse(tokens)?;
-    let mut spc = if let Some(&Token::Space(spc)) = tokens.peek() {
-        tokens.next();
-        spc
-    } else {
-        0
-    };
-    let op = match tokens.peek() {
-        Some(&Token::Equal(eq)) => Operation::Equal(eq),
-        Some(Token::Plus) => Operation::Add,
-        Some(Token::PlusEq) => Operation::AddEq,
-        Some(Token::Tack) => Operation::Sub,
-        Some(Token::TackEq) => Operation::SubEq,
-        Some(Token::Star) => Operation::Mul,
-        Some(Token::StarEq) => Operation::MulEq,
-        Some(Token::Slash) => Operation::Div,
-        Some(Token::SlashEq) => Operation::DivEq,
-        Some(Token::Percent) => Operation::Mod,
-        Some(Token::PercentEq) => Operation::ModEq,
-        Some(Token::LCaret) => Operation::Lt,
-        Some(Token::LCaretEq) => Operation::Le,
-        Some(Token::RCaret) => Operation::Gt,
-        Some(Token::RCaretEq) => Operation::Ge,
-        Some(Token::Dot) => Operation::Dot,
-        Some(Token::And) => Operation::And,
-        Some(Token::Or) => Operation::Or,
-        Some(Token::Arrow) => Operation::Arrow,
-        Some(Token::PlusPlus) => {
-            todo!()
+) -> SResult<Vec<GroupThingieEnum>> {
+    let mut toks = Vec::new();
+    loop {
+        let mut whitespace = consume_whitespace(tokens);
+        match tokens.peek() {
+            Some(Token::TackTack) => toks.push(GroupThingieEnum::Unary(
+                UnaryOperation::Decrement,
+                whitespace,
+            )),
+            Some(Token::PlusPlus) => toks.push(GroupThingieEnum::Unary(
+                UnaryOperation::Increment,
+                whitespace,
+            )),
+            Some(
+                Token::RParen
+                | Token::Bang(_)
+                | Token::Question(_)
+                | Token::RSquare
+                | Token::Comma
+                | Token::RSquirrely,
+            )
+            | None => break,
+            Some(tok) => {
+                if let Ok(op) = Operation::try_from(tok.clone()) {
+                    tokens.next();
+                    whitespace += consume_whitespace(tokens);
+                    toks.push(GroupThingieEnum::Operation(op, whitespace));
+                } else {
+                    let inner = inner_parse(tokens)?;
+                    if matches!(inner, Syntax::Statement(..)) {
+                        toks.push(GroupThingieEnum::Syntax(inner));
+                        break;
+                    }
+                    toks.push(GroupThingieEnum::Syntax(inner));
+                }
+            }
         }
-        Some(Token::TackTack) => {
-            todo!()
-        }
-        _ => {
-            return Ok(Some(left));
-        }
-    };
-    tokens.next();
-    if let Some(&Token::Space(spc_right)) = tokens.peek() {
-        spc += spc_right;
     }
-    groups_buf.push((left, op, spc));
-    Ok(None)
+    Ok(toks)
 }
 
-/// merge operators until only the tail remains
-fn group(mut src: Vec<OpGroup>, mut tail: Syntax) -> SResult<Syntax> {
-    while let Some(&(_, _, val)) = src.iter().min_by_key(|(_, _, u)| u) {
-        (src, tail) = inner_group(src, tail, val)?;
+fn inner_parse_group_better<T: Iterator<Item = GroupThingieEnum>>(
+    tokens: &mut Peekable<T>,
+    spacing: u8,
+) -> SResult<Syntax> {
+    if spacing == 0 {
+        return match tokens.next() {
+            Some(GroupThingieEnum::Syntax(lhs)) => Ok(lhs),
+            // Some(GroupThingieEnum::Unary(UnaryOperation::Call(call), _)) => Ok(Syntax::Block(call)),
+            Some(other) => Err(format!("Expected expression; got `{other:?}`")),
+            None => Err(String::from("Unexpected EOF")),
+        };
     }
-    Ok(tail)
-}
-
-/// merge operators separated by `val` space
-fn inner_group(src: Vec<OpGroup>, mut tail: Syntax, val: u8) -> SResult<(Vec<OpGroup>, Syntax)> {
-    let mut grouping_buf: Vec<OpGroup> = Vec::new();
-    let mut src_iter = src.into_iter();
-    while let Some((left, op, spc)) = src_iter.next() {
-        // if the operators are further apart, push it to a later iteration
-        if spc != val {
-            grouping_buf.push((left, op, spc));
-        // if there's a next item, turn `[l op sp, r op sp]` into `[(l op r) op sp]`
-        } else if let Some((right, op_2, spc_2)) = src_iter.next() {
-            grouping_buf.push((make_operation(left, op, right)?, op_2, spc_2));
-        // if there's no next item, turn `[l op sp] r` into `l op r`
-        } else {
-            tail = make_operation(left, op, tail)?;
+    if let Some(GroupThingieEnum::Unary(unary, spc)) = tokens.peek() {
+        let unary = *unary;
+        let spc = *spc;
+        return Ok(Syntax::UnaryOperation(
+            unary,
+            Box::new(inner_parse_group_better(tokens, spc)?),
+        ));
+    }
+    let rhs = inner_parse_group_better(tokens, spacing - 1)?;
+    // println!("{rhs}");
+    match tokens.peek() {
+        Some(GroupThingieEnum::Operation(op, spc)) if *spc < spacing => {
+            let op = *op;
+            tokens.next();
+            let lhs = inner_parse_group_better(tokens, spacing)?;
+            make_operation(lhs, op, rhs)
         }
+        _ => Ok(rhs),
     }
-    Ok((grouping_buf, tail))
 }
 
 /// if `op` is `->`, try to make it into a function
@@ -103,12 +113,12 @@ fn make_operation(left: Syntax, op: Operation, right: Syntax) -> SResult<Syntax>
                 .map(|syn| match syn {
                     Syntax::Ident(ident) => Ok(ident),
                     other => Err(format!(
-                        "Function input can only be identifiers, not {other:?}"
+                        "Function input can only have identifiers, not {other:?}"
                     )),
                 })
                 .collect::<Result<Vec<_>, _>>()?,
             Syntax::Ident(ident) => vec![ident],
-            _ => todo!(),
+            other => return Err(format!("Function input can only have identifier or parenthesized list of values; got {other}")),
         };
         Ok(Syntax::Function(input, Box::new(right)))
     } else {

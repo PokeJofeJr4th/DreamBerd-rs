@@ -84,7 +84,7 @@ fn op_assign() {
         "`helloworld`"
     );
     assert_eq_db!(
-        "{const var msg = 'i did '! msg += -msg! msg}",
+        "{const var msg = 'i did '! msg += ;msg! msg}",
         "`i did  did i`"
     );
 }
@@ -100,8 +100,7 @@ fn function() {
 #[test]
 fn doc_tests() {
     assert_eq_db!(";'hello there'", "'ereht olleh'");
-    assert_eq_db!("-true", "false");
-    assert_eq_db!(";1", "-1");
+    assert_eq_db!(";true", "false");
     assert_eq_db!("const var age = 1! age += 1! age", "2");
     assert_eq_db!("var const id = 'name'! id = 'main'! id", "'main'");
     assert_eq_db!("var var count = 0! count += 1! count = 2! count", "2");
@@ -112,7 +111,7 @@ fn doc_tests() {
     assert_eq_db!("1+2 * 3", "9");
     assert_eq_db!("`he` + `l`*2 + `o ` + ;`dlrow`", "`hello world`");
     assert_eq_db!("`johnny` * 1.5", "`johnnyjoh`");
-    assert_eq_db!("`no lemon ` + -`no lemon`", "`no lemon nomel on`");
+    assert_eq_db!("`no lemon ` + ;`no lemon`", "`no lemon nomel on`");
 
     eval(
         "const const use = (val) -> {

@@ -14,6 +14,7 @@ pub fn parse(tokens: Vec<Token>) -> SResult<Syntax> {
 }
 
 fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<Syntax> {
+    // println!("{:?}", tokens.peek());
     match tokens.next() {
         Some(Token::String(str)) => Ok(Syntax::String(str)),
         Some(Token::Tack | Token::Semicolon) => Ok(Syntax::Negate(Box::new(inner_parse(tokens)?))),
@@ -75,10 +76,13 @@ fn inner_parse<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<S
     }
 }
 
-fn consume_whitespace<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) {
-    while let Some(Token::Space(_)) = tokens.peek() {
+fn consume_whitespace<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> u8 {
+    let mut sp = 0;
+    while let Some(&Token::Space(s)) = tokens.peek() {
         tokens.next();
+        sp += s;
     }
+    sp
 }
 
 fn consume_bang<T: Iterator<Item = Token>>(syn: Syntax, tokens: &mut Peekable<T>) -> Syntax {
@@ -198,6 +202,9 @@ fn optimize(syn: Syntax) -> Syntax {
         Syntax::Call(ident, args) => Syntax::Call(ident, args.into_iter().map(optimize).collect()),
         Syntax::Operation(lhs, op, rhs) => {
             Syntax::Operation(Box::new(optimize(*lhs)), op, Box::new(optimize(*rhs)))
+        }
+        Syntax::UnaryOperation(unary, operand) => {
+            Syntax::UnaryOperation(unary, Box::new(optimize(*operand)))
         }
         Syntax::Block(inner) => {
             let mut new_inner: Vec<_> = Vec::with_capacity(inner.len());
