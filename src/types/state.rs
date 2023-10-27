@@ -34,6 +34,7 @@ impl State {
         kw!(current "delete" => Keyword::Delete);
         kw!(current "eval" => Keyword::Eval);
         kw!(current "false" => false);
+        kw!(current "forget" => Keyword::Forget);
         kw!(current "if" => Keyword::If);
         kw!(current "infinity" => Value::Number(f64::INFINITY));
         kw!(current "maybe" => Boolean::Maybe);

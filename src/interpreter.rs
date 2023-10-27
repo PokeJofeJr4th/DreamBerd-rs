@@ -214,6 +214,12 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                 }
                 Ok(state.borrow().undefined.clone())
             }
+            Value::Keyword(Keyword::Forget) => {
+                let [Syntax::Ident(ident)] = args else { return Err(String::from("`forget` keyword requires one argument"))};
+                let undefined = state.borrow().undefined.clone();
+                state.borrow_mut().insert(ident.clone(), undefined);
+                Ok(state.borrow().undefined.clone())
+            }
             Value::Keyword(Keyword::Previous) => {
                 let [arg] = args else { return Err(String::from("`previous` keyword requires one argument")) };
                 let evaluated = inner_interpret(arg, state.clone())?;
