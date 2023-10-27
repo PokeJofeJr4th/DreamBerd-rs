@@ -221,7 +221,7 @@ fn optimize(syn: Syntax) -> Syntax {
             let mut new_inner: Vec<_> = Vec::with_capacity(inner.len());
             // flatten nested blocks
             for item in inner {
-                match item {
+                match optimize(item) {
                     Syntax::Block(block) => new_inner.extend(block),
                     other => new_inner.push(other),
                 }
