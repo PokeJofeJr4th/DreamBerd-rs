@@ -1,8 +1,8 @@
-use std::{fmt::Display, rc::Rc};
+use std::{fmt::Display, hash::Hash, rc::Rc};
 
 use super::{StringSegment, Token};
 
-#[derive(PartialEq, Eq, Debug, Hash, Clone)]
+#[derive(PartialEq, Debug, Clone, Eq, Hash)]
 pub enum Syntax {
     Declare(VarType, Rc<str>, Box<Syntax>),
     Function(Vec<Rc<str>>, Box<Syntax>),
@@ -83,7 +83,7 @@ impl Display for VarType {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub enum UnaryOperation {
     Increment,
     Decrement,

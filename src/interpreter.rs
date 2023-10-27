@@ -121,7 +121,7 @@ fn interpret_operation(
         Operation::Mul => lhs_eval * rhs_eval,
         Operation::Div => lhs_eval / rhs_eval,
         Operation::Mod => lhs_eval % rhs_eval,
-        Operation::Dot => rhs_eval.with_ref(|rhs_eval| lhs_eval.dot(rhs_eval))?,
+        Operation::Dot => rhs_eval.with_ref(|rhs_eval| lhs_eval.dot(rhs_eval)),
         Operation::And => lhs_eval & rhs_eval,
         Operation::Or => lhs_eval | rhs_eval,
         Operation::AddEq => {
@@ -148,7 +148,7 @@ fn interpret_operation(
         Operation::Le => Pointer::from(lhs_eval <= rhs_eval),
         Operation::Gt => Pointer::from(lhs_eval > rhs_eval),
         Operation::Ge => Pointer::from(lhs_eval >= rhs_eval),
-        Operation::Arrow => todo!(),
+        Operation::Arrow => unreachable!(),
     };
     if let (
         Some(val),

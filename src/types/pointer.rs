@@ -148,19 +148,14 @@ impl Pointer {
         }
     }
 
-    /// Apply the dot operator. This has two valid cases: float parsing and object indexing. Otherwise, it returns `undefined`
+    /// Apply the dot operator; object indexing. Otherwise, it returns `undefined`
     #[allow(clippy::option_if_let_else, clippy::single_match_else)]
-    pub fn dot(&self, rhs: &Value) -> SResult<Self> {
+    pub fn dot(&self, rhs: &Value) -> Self {
         let allow_modify = matches!(self, Self::ConstVar(_) | Self::VarVar(_));
         let lhs = self.clone_inner();
         match (lhs, rhs) {
-            (Value::Number(lhs), Value::Number(rhs)) => {
-                Ok(Self::from(format!("{lhs}.{rhs}").parse::<f64>().map_err(
-                    |e| format!("Error parsing `{lhs}.{rhs}`: {e}"),
-                )?))
-            }
             (Value::Object(mut obj), key) => match obj.get(key) {
-                Some(ptr) => Ok(ptr.clone()),
+                Some(ptr) => ptr.clone(),
                 None => {
                     let val = if allow_modify {
                         Self::ConstVar(rc_mut_new(Value::empty_object().into()))
@@ -168,10 +163,10 @@ impl Pointer {
                         Self::ConstConst(Rc::new(Value::empty_object()))
                     };
                     obj.insert(key.clone(), val.clone());
-                    Ok(val)
+                    val
                 }
             },
-            _ => Ok(Self::from(Value::empty_object())),
+            _ => Self::from(Value::empty_object()),
         }
     }
 

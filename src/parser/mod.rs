@@ -199,6 +199,18 @@ fn optimize(syn: Syntax) -> Syntax {
             UnaryOperation::Call(args.into_iter().map(optimize).collect()),
             Box::new(optimize(*func)),
         ),
+        Syntax::Operation(lhs, Operation::Dot, rhs)
+            if 'guard: {
+                let Syntax::Ident(ref lhs) = *lhs else { break 'guard false };
+                let Syntax::Ident(ref rhs) = *rhs else { break 'guard false };
+                format!("{lhs}.{rhs}").parse::<f64>().is_ok()
+            } =>
+        {
+            let Syntax::Ident(lhs) = *lhs else {panic!()};
+            let Syntax::Ident(rhs) = *rhs else {panic!()};
+            let Ok(float) = format!("{lhs}.{rhs}").parse::<f32>() else { panic!()};
+            Syntax::Ident(format!("{float}").into())
+        }
         Syntax::Operation(lhs, op, rhs) => {
             Syntax::Operation(Box::new(optimize(*lhs)), op, Box::new(optimize(*rhs)))
         }
