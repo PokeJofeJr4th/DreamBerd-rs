@@ -428,6 +428,21 @@ print score! // 16
 DreamBerd has a fast-growing standard library. Due to the limitations of the file system, it must be copied and pasted into every file that uses it.
 
 ```c
+const const bool:Fn<T> = o:T->if(o,true,false,maybe)!
+const const clone:Fn<T> = (o:T)->{
+    const const o:T=o!
+    const var o:T=o!
+    o
+}!
+const const db:Fn<_> = ()->{
+    print"   ___                     ___             __  ___  ____"!
+    print"  / _ \_______ ___ ___ _  / _ )___ _______/ / / _ \/ __/"!
+    print" / // / __/ -_) _ `/  ' \/ _  / -_) __/ _  / / , _/\ \ "!
+    print"/____/_/  \__/\_,_/_/_/_/____/\__/_/  \_,_/ /_/|_/___/"!
+}!
+const const identity:Fn<T> = t:T->t!
+const const print:Fn<String> = t:String->{t?}!
+const const str:Fn<T> = t:T->`${t}`!
 const const use:Fn<T> = v:T->{
     const var o={}!
     o.call:Fn<Option<T>> = v:Option<T>->{
@@ -440,20 +455,4 @@ const const use:Fn<T> = v:T->{
     o.value:T=v!
     o
 }!
-
-const const print:Fn<String> = t:String->{t?}!
-
-const const str:Fn<T> = t:T->`${t}`!
-
-const const identity:Fn<T> = t:T->t!
-
-const const bool:Fn<T> = o:T->if(o,true,false,maybe)!
-
-const const db:Fn<_> = ()->{
-    print"   ___                     ___             __  ___  ____"!
-    print"  / _ \_______ ___ ___ _  / _ )___ _______/ / / _ \/ __/"!
-    print" / // / __/ -_) _ `/  ' \/ _  / -_) __/ _  / / , _/\ \ "!
-    print"/____/_/  \__/\_,_/_/_/_/____/\__/_/  \_,_/ /_/|_/___/"!
-}!
-
 ```

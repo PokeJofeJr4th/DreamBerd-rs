@@ -25,3 +25,9 @@ const const db:Fn<_> = ()->{
     print" / // / __/ -_) _ `/  ' \/ _  / -_) __/ _  / / , _/\ \ "!
     print"/____/_/  \__/\_,_/_/_/_/____/\__/_/  \_,_/ /_/|_/___/"!
 }!
+
+const const clone:Fn<T> = (o:T)->{
+    const const o:T = o!
+    const var o:T = o!
+    o
+}!
