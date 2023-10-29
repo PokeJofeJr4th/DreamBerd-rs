@@ -50,15 +50,16 @@ pub fn inner_interpret(src: &Syntax, state: RcMut<State>) -> SResult<Pointer> {
             };
             for syn in iter {
                 inner_interpret(syn, state.clone())?;
+                state.borrow_mut().tick();
             }
             let res = inner_interpret(last, state)?;
             Ok(res)
         }
-        Syntax::Declare(var_type, ident, value) => {
+        Syntax::Declare(var_type, ident, lifetime, value) => {
             let val = inner_interpret(value, state.clone())?;
             state
                 .borrow_mut()
-                .insert(ident.clone(), val.convert(*var_type));
+                .insert(ident.clone(), val.convert(*var_type), *lifetime);
             // println!("{state:#?}");
             Ok(state.borrow().undefined.clone())
         }
@@ -217,7 +218,7 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
             Value::Keyword(Keyword::Forget) => {
                 let [Syntax::Ident(ident)] = args else { return Err(String::from("`forget` keyword requires one argument"))};
                 let undefined = state.borrow().undefined.clone();
-                state.borrow_mut().insert(ident.clone(), undefined);
+                state.borrow_mut().insert(ident.clone(), undefined, Lifetime::Default);
                 Ok(state.borrow().undefined.clone())
             }
             Value::Keyword(Keyword::Previous) => {
@@ -266,7 +267,7 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                 let inner_val = Value::Function(args, body.clone());
                 state
                     .borrow_mut()
-                    .insert(name.clone(), Pointer::from(inner_val));
+                    .insert(name.clone(), Pointer::from(inner_val), Lifetime::Default);
                 Ok(state.borrow().undefined.clone())
             }
             Value::Keyword(Keyword::Class) => {
@@ -274,7 +275,7 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                     return Err(format!("Invalid arguments for `class`: `{args:?}`; expected name and body"))
                 };
                 let inner_value = Value::Class(body.clone());
-                state.borrow_mut().insert(name.clone(), Pointer::ConstVar(rc_mut_new(inner_value.into())));
+                state.borrow_mut().insert(name.clone(), Pointer::ConstVar(rc_mut_new(inner_value.into())), Lifetime::Default);
                 Ok(state.borrow().undefined.clone())
             }
             Value::Keyword(Keyword::New) => {
@@ -287,7 +288,7 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                 };
                 class_ref.borrow_mut().assign(Value::empty_object());
                 let Some(Value::Class(class_body)) = class_ref.borrow().previous.clone() else {
-                    return Err(format!("Expected a mutable reference to a class; got `{class_ref:?}`"))
+                    return Err(format!("Expected a mutable reference to a class; got `{:?}`", class_ref.borrow()))
                 };
                 let inner_state = rc_mut_new(State::from_parent(state));
                 for statement in class_body {
@@ -316,7 +317,7 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                     return Err(format!("`Object({obj:?})` is not a function"))
                 };
                 let mut new_state = State::from_parent(state);
-                new_state.insert("self".into(), func.clone());
+                new_state.insert("self".into(), func.clone(), Lifetime::Default);
                 interpret_function(call, args, rc_mut_new(new_state))
             }
             Value::Function(fn_args, body) => {
@@ -327,7 +328,7 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                     } else {
                         state.borrow().undefined.clone()
                     };
-                    inner_state.insert(ident.clone(), arg_eval);
+                    inner_state.insert(ident.clone(), arg_eval, Lifetime::Default);
                 }
                 inner_interpret(body, rc_mut_new(inner_state))
             }

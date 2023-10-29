@@ -4,7 +4,7 @@ use super::{StringSegment, Token};
 
 #[derive(PartialEq, Debug, Clone, Eq, Hash)]
 pub enum Syntax {
-    Declare(VarType, Rc<str>, Box<Syntax>),
+    Declare(VarType, Rc<str>, Lifetime, Box<Syntax>),
     Function(Vec<Rc<str>>, Box<Syntax>),
     Operation(Box<Syntax>, Operation, Box<Syntax>),
     UnaryOperation(UnaryOperation, Box<Syntax>),
@@ -39,8 +39,8 @@ impl Display for Syntax {
                 write!(f, "\"")
             }
             Self::Ident(ident) => write!(f, "{ident}"),
-            Self::Declare(var_type, name, value) => {
-                write!(f, "{var_type} {name} = {value}")
+            Self::Declare(var_type, name, lifetime, value) => {
+                write!(f, "{var_type} {name}{lifetime} = {value}")
             }
             Self::Operation(lhs, op, rhs) => {
                 write!(f, "({lhs}{op}{rhs})")
@@ -164,6 +164,22 @@ impl TryFrom<Token> for Operation {
             Token::RCaret => Ok(Self::Gt),
             Token::RCaretEq => Ok(Self::Ge),
             _ => Err(()),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]
+pub enum Lifetime {
+    #[default]
+    Default,
+    Ticks(i32),
+}
+
+impl Display for Lifetime {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Default => write!(f, ""),
+            Self::Ticks(t) => write!(f, "<{t}>"),
         }
     }
 }

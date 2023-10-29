@@ -12,7 +12,7 @@ pub mod prelude {
 
     pub use super::pointer::{MutValue, Pointer};
     pub use super::state::State;
-    pub use super::syntax::{Operation, Syntax, UnaryOperation, VarType};
+    pub use super::syntax::{Lifetime, Operation, Syntax, UnaryOperation, VarType};
     pub use super::token::{StringSegment, Token};
     pub use super::value::{Boolean, Keyword, Value};
 

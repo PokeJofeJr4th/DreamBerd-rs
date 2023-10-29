@@ -116,6 +116,33 @@ fn declare<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>, id: &str) -> SRe
                     return Err(format!("Expected a variable name after `{id} {second}`"))
                 };
     consume_whitespace(tokens);
+    // get a lifetime
+    let lifetime = match tokens.peek() {
+        Some(Token::LCaret) => {
+            tokens.next();
+            match tokens.next() {
+                Some(Token::Ident(ident)) => {
+                    let lt = Lifetime::Ticks(ident.parse().map_err(|err| {
+                        format!("Expected integer lifetime; got `{ident}`; {err}")
+                    })?);
+                    match tokens.next() {
+                        Some(Token::RCaret) => {}
+                        Some(other) => {
+                            return Err(format!(
+                                "Expected `>` after lifetime value; got `{other:?}`"
+                            ))
+                        }
+                        None => return Err(String::from("Unexpected EOF")),
+                    }
+                    lt
+                }
+                Some(other) => return Err(format!("Expected integer lifetime; got `{other:?}`")),
+                None => return Err(String::from("Unexpected EOF")),
+            }
+        }
+        _ => Lifetime::Default,
+    };
+    consume_whitespace(tokens);
     // consume a type definition
     if tokens.peek() == Some(&Token::Colon) {
         tokens.next();
@@ -136,7 +163,7 @@ fn declare<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>, id: &str) -> SRe
         }
     };
     Ok(consume_bang(
-        Syntax::Declare(var_type, varname, Box::new(value)),
+        Syntax::Declare(var_type, varname, lifetime, Box::new(value)),
         tokens,
     ))
 }
@@ -191,8 +218,8 @@ fn get_type<T: Iterator<Item = Token>>(tokens: &mut Peekable<T>) -> SResult<()> 
 
 fn optimize(syn: Syntax) -> Syntax {
     match syn {
-        Syntax::Declare(typ, ident, inner) => {
-            Syntax::Declare(typ, ident, Box::new(optimize(*inner)))
+        Syntax::Declare(typ, ident, lifetime, inner) => {
+            Syntax::Declare(typ, ident, lifetime, Box::new(optimize(*inner)))
         }
         Syntax::Function(args, inner) => Syntax::Function(args, Box::new(optimize(*inner))),
         Syntax::UnaryOperation(UnaryOperation::Call(args), func) => Syntax::UnaryOperation(
