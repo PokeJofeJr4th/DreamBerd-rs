@@ -166,6 +166,14 @@ impl Pointer {
                     val
                 }
             },
+            (Value::String(str), Value::Number(num)) => match *num as i32 {
+                i @ ..=-2 => str.chars().nth(str.len() + ((-i + 1) as usize)),
+                i @ -1.. => str.chars().nth((i + 1) as usize),
+            }
+            .map_or_else(
+                || Self::from(Value::empty_object()),
+                |ch| Self::from(Value::String(String::from(ch).into())),
+            ),
             _ => Self::from(Value::empty_object()),
         }
     }
