@@ -34,6 +34,7 @@ impl State {
         kw!(current "class" => Keyword::Class);
         kw!(current "className" => Keyword::Class);
         kw!(current "const" => Keyword::Const);
+        kw!(current "current" => Keyword::Current);
         kw!(current "delete" => Keyword::Delete);
         kw!(current "eval" => Keyword::Eval);
         kw!(current "false" => false);

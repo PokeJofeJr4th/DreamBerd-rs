@@ -416,6 +416,13 @@ print next_score! // 6
 print score! // 16
 ```
 
+Finally, the `current` keyword lets you see into the present!
+
+```c
+const var score = 5!
+print(current score)! //5
+```
+
 ## Standard Library
 
 > #### New for October 2023!

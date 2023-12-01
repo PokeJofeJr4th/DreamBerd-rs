@@ -401,6 +401,7 @@ impl From<Boolean> for Value {
 pub enum Keyword {
     Class,
     Const,
+    Current,
     Delete,
     Eval,
     Forget,
@@ -418,6 +419,7 @@ impl Display for Keyword {
         match self {
             Self::Class => write!(f, "class"),
             Self::Const => write!(f, "const"),
+            Self::Current => write!(f, "current"),
             Self::Eval => write!(f, "eval"),
             Self::Delete => write!(f, "delete"),
             Self::Forget => write!(f, "forget"),

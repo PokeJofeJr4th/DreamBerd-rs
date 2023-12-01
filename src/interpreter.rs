@@ -229,6 +229,10 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                     None => Ok(state.borrow().undefined.clone())
                 }
             }
+            Value::Keyword(Keyword::Current) => {
+                let [arg] = args else {return Err(String::from("`current` keyword requires one argument"))};
+                inner_interpret(arg, state)
+            }
             Value::Keyword(Keyword::Next) => {
                 let [arg] = args else { return Err(String::from("`next` keyword requires one argument")) };
                 let evaluated = inner_interpret(arg, state)?;
