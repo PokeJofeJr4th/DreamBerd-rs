@@ -336,6 +336,14 @@ fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> S
                 }
                 inner_interpret(body, rc_mut_new(inner_state))
             }
+            Value::String(str) => {
+                let [arg] = args else { return  Err("indexing string requires one argument".to_string());};
+                let rhs = inner_interpret(arg, state.clone())?;
+                let Value::Number(rhs) = rhs.clone_inner() else { return Err("indexing string requires number".to_string());};
+                let rhs = rhs as usize;
+                let char = str.chars().nth(rhs);
+                char.map_or_else(|| Ok(state.borrow().undefined.clone()), |char| Ok(Pointer::from(Value::String(Rc::from(char.to_string())))))
+            }
             other => {
                 let [arg] = args else { return Err(format!("`{other}` is not a function")) };
                 let rhs = inner_interpret(arg, state)?;
