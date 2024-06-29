@@ -8,3 +8,10 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.3.8", features = ["derive"] }
 lazy-regex = "2.5.0"
+rustyline = "=5.0.2"
+dialoguer = "0.11.0"
+
+[profile.dev]
+opt-level = "z"
+strip = true  # Automatically strip symbols from the binary.
+lto = true

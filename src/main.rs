@@ -6,6 +6,12 @@ use std::{
     path::{Path, PathBuf},
 };
 
+extern crate rustyline;
+
+use rustyline::error::ReadlineError;
+use rustyline::Editor;
+use dialoguer::Confirm;
+
 use clap::{Parser, Subcommand};
 use interpreter::inner_interpret;
 use types::{rc_mut_new, Pointer, RcMut, State, Syntax};
@@ -67,7 +73,54 @@ fn main() -> Result<(), Box<dyn Error>> {
                 // println!("{result}");
                 // println!("{state:?}");
             }
+            let mut rl = Editor::<()>::new();
+            if rl.load_history("history.txt").is_err() {
+                println!("{}", "No previous history...");
+            }
+
             loop {
+                //
+                let readline = rl.readline(">>>");
+                match readline {
+                    Ok(line) => {
+                        //
+                        if line.is_empty() {
+                            return Ok(());
+                        }
+                        let result = run_input(&line, state.clone());
+                        match result {
+                            Ok(ptr) => {
+                                if ptr != state.borrow().undefined {
+                                    println!("{ptr:?}");
+                                }
+                            }
+                            Err(err) => println!("Error: {err}"),
+                        }
+                    },
+                    Err(ReadlineError::Interrupted) => {
+                        // Bye bye! - awesome
+                        println!("\x1b[3m- CTRL+C\x1b[0m");
+                        let confirmation = Confirm::new()
+                            .with_prompt("Leave the repl?")
+                            .interact()
+                            .unwrap();
+                        if confirmation {
+                            println!("{}", "Leaving");
+                            break
+                        }
+                    },
+                    Err(ReadlineError::Eof) => {
+                        println!("CTRL-D");
+                        break
+                    },
+                    Err(err) => {
+                        println!("Error: {:?}", err);
+                        break
+                    }
+                }
+                rl.save_history("history.txt").unwrap();
+            }
+            /*loop {
                 let input = input!(">>> ");
                 if input.is_empty() {
                     return Ok(());
@@ -81,7 +134,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     }
                     Err(err) => println!("Error: {err}"),
                 }
-            }
+            }*/
         }
     }
     Ok(())
