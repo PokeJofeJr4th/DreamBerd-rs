@@ -1,21 +1,13 @@
 #![warn(clippy::pedantic, clippy::nursery)]
 
-use std::alloc::System;
-
-#[global_allocator]
-static A: System = System;
-
 use std::{
     error::Error,
     fs,
     path::{Path, PathBuf},
 };
 
-extern crate rustyline;
-
-use rustyline::error::ReadlineError;
-use rustyline::Editor;
 use dialoguer::Confirm;
+use rustyline::{error::ReadlineError, DefaultEditor};
 
 use clap::{Parser, Subcommand};
 use interpreter::inner_interpret;
@@ -72,7 +64,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             let path = "history";
 
-            let mut rl = Editor::<()>::new();
+            let mut rl = DefaultEditor::new()?;
             if rl.load_history(path).is_err() {
                 println!("No hist");
             }
@@ -82,7 +74,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 let readline = rl.readline(">>> ");
                 match readline {
                     Ok(line) => {
-                        rl.add_history_entry(line.as_str());
+                        rl.add_history_entry(line.as_str())?;
                         //
                         if line.is_empty() {
                             return Ok(());
@@ -96,7 +88,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                             }
                             Err(err) => println!("Error: {err}"),
                         }
-                    },
+                    }
                     Err(ReadlineError::Interrupted) => {
                         // Bye bye! - awesome
                         println!("\nCTRL-C");
@@ -105,17 +97,17 @@ fn main() -> Result<(), Box<dyn Error>> {
                             .interact()
                             .unwrap();
                         if confirmation {
-                            println!("{}", "Leaving");
-                            break
+                            println!("Leaving");
+                            break;
                         }
-                    },
+                    }
                     Err(ReadlineError::Eof) => {
                         println!("CTRL-D");
-                        break
-                    },
+                        break;
+                    }
                     Err(err) => {
-                        println!("Error: {:?}", err);
-                        break
+                        println!("Error: {err:?}");
+                        break;
                     }
                 }
                 rl.save_history(path).unwrap();
