@@ -6,6 +6,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use dialoguer::Confirm;
+use rustyline::{error::ReadlineError, DefaultEditor};
+
 use clap::{Parser, Subcommand};
 use interpreter::inner_interpret;
 use types::{rc_mut_new, Pointer, RcMut, State, Syntax};
@@ -16,17 +19,6 @@ mod parser;
 #[cfg(test)]
 mod tests;
 mod types;
-
-macro_rules! input {
-    ($msg: expr) => {{
-        use std::io::Write;
-        print!($msg);
-        std::io::stdout().flush().unwrap();
-        let mut response: String = String::new();
-        std::io::stdin().read_line(&mut response).unwrap();
-        response.trim().to_owned()
-    }};
-}
 
 #[derive(Parser)]
 struct Args {
@@ -54,6 +46,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             // println!("{result:?}");
         }
         SubcommandArg::Repl { path } => {
+            println!("\x1b[93mRepl - DreamBerd-rs\x1b[0m");
+            //
             let state = rc_mut_new(State::new());
             if let Some(path) = path {
                 let syn = file_to_syntax(&PathBuf::from(path))?;
@@ -67,20 +61,56 @@ fn main() -> Result<(), Box<dyn Error>> {
                 // println!("{result}");
                 // println!("{state:?}");
             }
+
+            let path = "history";
+
+            let mut rl = DefaultEditor::new()?;
+            if rl.load_history(path).is_err() {
+                println!("No hist");
+            }
+
             loop {
-                let input = input!(">>> ");
-                if input.is_empty() {
-                    return Ok(());
-                }
-                let result = run_input(&input, state.clone());
-                match result {
-                    Ok(ptr) => {
-                        if ptr != state.borrow().undefined {
-                            println!("{ptr:?}");
+                //
+                let readline = rl.readline(">>> ");
+                match readline {
+                    Ok(line) => {
+                        rl.add_history_entry(line.as_str())?;
+                        //
+                        if line.is_empty() {
+                            return Ok(());
+                        }
+                        let result = run_input(&line, state.clone());
+                        match result {
+                            Ok(ptr) => {
+                                if ptr != state.borrow().undefined {
+                                    println!("{ptr:?}");
+                                }
+                            }
+                            Err(err) => println!("Error: {err}"),
                         }
                     }
-                    Err(err) => println!("Error: {err}"),
+                    Err(ReadlineError::Interrupted) => {
+                        // Bye bye! - awesome
+                        println!("\nCTRL-C");
+                        let confirmation = Confirm::new()
+                            .with_prompt("Do you want to leave the repl?")
+                            .interact()
+                            .unwrap();
+                        if confirmation {
+                            println!("Leaving");
+                            break;
+                        }
+                    }
+                    Err(ReadlineError::Eof) => {
+                        println!("CTRL-D");
+                        break;
+                    }
+                    Err(err) => {
+                        println!("Error: {err:?}");
+                        break;
+                    }
                 }
+                rl.save_history(path).unwrap();
             }
         }
     }
