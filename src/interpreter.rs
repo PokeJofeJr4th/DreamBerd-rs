@@ -33,12 +33,15 @@ pub fn inner_interpret(src: &Syntax, state: RcMut<State>) -> SResult<Pointer> {
         //     let func = inner_interpret(operand, state.clone())?;
         //     interpret_function(&func, args, state)
         // }
-        Syntax::UnaryOperation(unary @ (UnaryOperation::Increment | UnaryOperation::Decrement), operand) => {
+        Syntax::UnaryOperation(
+            unary @ (UnaryOperation::Increment | UnaryOperation::Decrement),
+            operand,
+        ) => {
             let mut operand_ptr = inner_interpret(operand, state)?;
             match unary {
                 UnaryOperation::Decrement => operand_ptr -= 1.0.into(),
                 UnaryOperation::Increment => operand_ptr += 1.0.into(),
-                _ => unreachable!()
+                _ => unreachable!(),
             }
             Ok(operand_ptr)
         }
@@ -46,7 +49,7 @@ pub fn inner_interpret(src: &Syntax, state: RcMut<State>) -> SResult<Pointer> {
             let state = rc_mut_new(State::from_parent(state));
             let mut iter = statements.iter();
             let Some(last) = iter.next_back() else {
-                return Ok(state.borrow().undefined.clone())
+                return Ok(state.borrow().undefined.clone());
             };
             for syn in iter {
                 inner_interpret(syn, state.clone())?;
@@ -71,6 +74,17 @@ pub fn inner_interpret(src: &Syntax, state: RcMut<State>) -> SResult<Pointer> {
                         string_buf.push_str(&state.borrow_mut().get(ident.clone()).to_string());
                     }
                     StringSegment::String(str) => string_buf.push_str(str),
+                    StringSegment::Escudo(lhs, rhs) => string_buf.push_str(
+                        &inner_interpret(
+                            &Syntax::Operation(
+                                Box::new(Syntax::Ident(lhs.clone())),
+                                Operation::Dot,
+                                Box::new(Syntax::Ident(rhs.clone())),
+                            ),
+                            state.clone(),
+                        )?
+                        .to_string(),
+                    ),
                 }
             }
             Ok(Pointer::from(string_buf.as_ref()))
@@ -97,7 +111,9 @@ fn interpret_operation(
         (&*lhs_eval.make_const(), op, rhs)
     {
         let inner_var = lhs_eval.make_var();
-        let Value::Object(ref mut obj) = inner_var.borrow_mut().value else { panic!("Internal Compiler Error at {}:{}", file!(), line!()) };
+        let Value::Object(ref mut obj) = inner_var.borrow_mut().value else {
+            panic!("Internal Compiler Error at {}:{}", file!(), line!())
+        };
         let key = Value::from(ident.clone());
         if let Some(val) = obj.get(&key) {
             // println!("{val:?}");
@@ -189,168 +205,222 @@ fn update_pointer(val: &RefCell<MutValue>) -> SResult<()> {
 
 #[allow(clippy::too_many_lines)]
 fn interpret_function(func: &Pointer, args: &[Syntax], state: RcMut<State>) -> SResult<Pointer> {
-    func.with_ref(|func_eval|
-        match func_eval {
-            Value::Keyword(Keyword::If) => {
-                let [condition, body, ..] = args else {
-                        return Err(String::from("If statement requires two arguments: condition and body"))
-                    };
-                let condition_evaluated = inner_interpret(condition, state.clone())?;
-                // println!("{condition_evaluated:?}");
-                let bool = condition_evaluated.with_ref(Value::bool);
-                if bool == Boolean::True {
-                    inner_interpret(body, state)
-                } else if let (Boolean::Maybe, Some(body)) = (bool, args.get(3)) {
-                    inner_interpret(body, state)
-                } else {
-                    match args.get(2) {
-                        Some(else_statement) => inner_interpret(else_statement, state),
-                        None => Ok(state.borrow().undefined.clone())
-                    }
+    func.with_ref(|func_eval| match func_eval {
+        Value::Keyword(Keyword::If) => {
+            let [condition, body, ..] = args else {
+                return Err(String::from(
+                    "If statement requires two arguments: condition and body",
+                ));
+            };
+            let condition_evaluated = inner_interpret(condition, state.clone())?;
+            // println!("{condition_evaluated:?}");
+            let bool = condition_evaluated.with_ref(Value::bool);
+            if bool == Boolean::True {
+                inner_interpret(body, state)
+            } else if let (Boolean::Maybe, Some(body)) = (bool, args.get(3)) {
+                inner_interpret(body, state)
+            } else {
+                match args.get(2) {
+                    Some(else_statement) => inner_interpret(else_statement, state),
+                    None => Ok(state.borrow().undefined.clone()),
                 }
             }
-            Value::Keyword(Keyword::Delete) => {
-                if let [Syntax::Ident(key)] = args {
-                    state.borrow_mut().delete(key.clone());
-                }
-                Ok(state.borrow().undefined.clone())
-            }
-            Value::Keyword(Keyword::Forget) => {
-                let [Syntax::Ident(ident)] = args else { return Err(String::from("`forget` keyword requires one argument"))};
-                let undefined = state.borrow().undefined.clone();
-                state.borrow_mut().insert(ident.clone(), undefined, Lifetime::Default);
-                Ok(state.borrow().undefined.clone())
-            }
-            Value::Keyword(Keyword::Previous) => {
-                let [arg] = args else { return Err(String::from("`previous` keyword requires one argument")) };
-                let evaluated = inner_interpret(arg, state.clone())?;
-                match evaluated.as_var() {
-                    Some(eval) => Ok(eval.borrow().previous.as_ref().map_or_else(move || state.borrow().undefined.clone(), |prev| Pointer::ConstConst(Rc::new(prev.clone())))),
-                    None => Ok(state.borrow().undefined.clone())
-                }
-            }
-            Value::Keyword(Keyword::Current) => {
-                let [arg] = args else {return Err(String::from("`current` keyword requires one argument"))};
-                inner_interpret(arg, state)
-            }
-            Value::Keyword(Keyword::Next) => {
-                let [arg] = args else { return Err(String::from("`next` keyword requires one argument")) };
-                let evaluated = inner_interpret(arg, state)?;
-                let next_ptr = Pointer::ConstVar(rc_mut_new(Value::empty_object().into()));
-                evaluated.as_var().map_or_else(|| Err(String::from("`next` keyword requires a mutable value")), |eval| {
-                        eval.borrow_mut().add_next_handle(next_ptr.clone());
-                        // println!("{eval:?}");
-                        // println!("{next_ptr:?}");
-                        Ok(next_ptr)
-                    })
-            }
-            Value::Keyword(Keyword::When) => {
-                let [condition, body] = args else { return Err(String::from("`when` keyword requires two arguments; condition and body")) };
-                let idents = find_idents_in_syntax(condition);
-                for ident in idents {
-                    let Some(var) = state.borrow_mut().get(ident).as_var() else { continue };
-                    var.borrow_mut().add_event_listener(Syntax::UnaryOperation(UnaryOperation::Call(vec![condition.clone(), body.clone()]), Box::new(Syntax::Ident("if".into()))), state.clone());
-                }
-                Ok(state.borrow().undefined.clone())
-            }
-            Value::Keyword(Keyword::Function) => {
-                let [Syntax::Ident(name), args, body] = args else {
-                        return Err(format!("Invalid arguments for `function`: `{args:?}`; expected name, args, and body"))
-                    };
-                let args = match args {
-                    Syntax::Block(args) => args.clone(),
-                    other => vec![other.clone()],
-                };
-                let args: Vec<Rc<str>> = args
-                    .into_iter()
-                    .map(|syn| match syn {
-                        Syntax::Ident(str) => Ok(str),
-                        other => Err(format!("Invalid parameter name: `{other}`")),
-                    })
-                    .collect::<Result<_, _>>()?;
-                let inner_val = Value::Function(args, body.clone());
-                state
-                    .borrow_mut()
-                    .insert(name.clone(), Pointer::from(inner_val), Lifetime::Default);
-                Ok(state.borrow().undefined.clone())
-            }
-            Value::Keyword(Keyword::Class) => {
-                let [Syntax::Ident(name), Syntax::Block(body)] = args else {
-                    return Err(format!("Invalid arguments for `class`: `{args:?}`; expected name and body"))
-                };
-                let inner_value = Value::Class(body.clone());
-                state.borrow_mut().insert(name.clone(), Pointer::ConstVar(rc_mut_new(inner_value.into())), Lifetime::Default);
-                Ok(state.borrow().undefined.clone())
-            }
-            Value::Keyword(Keyword::New) => {
-                let [class] = args else { 
-                    return Err(format!("Invalid arguments for `new`: `{args:?}`; expected a class"))
-                };
-                let class_pointer = inner_interpret(class, state.clone())?;
-                let Some(class_ref) = class_pointer.as_var()  else {
-                    return Err(format!("Expected a mutable reference to a class; got `{class_pointer:?}`"))
-                };
-                class_ref.borrow_mut().assign(Value::empty_object());
-                let Some(Value::Class(class_body)) = class_ref.borrow().previous.clone() else {
-                    return Err(format!("Expected a mutable reference to a class; got `{:?}`", class_ref.borrow()))
-                };
-                let inner_state = rc_mut_new(State::from_parent(state));
-                for statement in class_body {
-                    inner_interpret(&statement, inner_state.clone())?;
-                }
-                let inner_obj = inner_state.borrow().locals_to_object();
-                Ok(Pointer::from(Value::Object(inner_obj)))
-            }
-            Value::Keyword(Keyword::Eval) => {
-                let [body] = args else {
-                    return Err(format!("You can only `eval` one thing at a time; got `{args:?}`"));
-                };
-                let text = inner_interpret(body, state.clone())?.to_string();
-                // #[cfg(debug_assertions)]
-                // println!("Evaluating Inner: {text}");
-                let tokens = crate::lexer::tokenize(&text)?;
-                // #[cfg(debug_assertions)]
-                // println!("Evaluating Tokens: {tokens:?}");
-                let syntax = crate::parser::parse(tokens)?;
-                // #[cfg(debug_assertions)]
-                // println!("Evaluating Syntax: {syntax:?}");
-                inner_interpret(&syntax, state)
-            }
-            Value::Object(obj) => {
-                let Some(call) = obj.get(&"call".into()) else {
-                    return Err(format!("`Object({obj:?})` is not a function"))
-                };
-                let mut new_state = State::from_parent(state);
-                new_state.insert("self".into(), func.clone(), Lifetime::Default);
-                interpret_function(call, args, rc_mut_new(new_state))
-            }
-            Value::Function(fn_args, body) => {
-                let mut inner_state = State::from_parent(state.clone());
-                for (idx, ident) in fn_args.iter().enumerate() {
-                    let arg_eval = if let Some(syn) = args.get(idx) {
-                        inner_interpret(syn, state.clone())?
-                    } else {
-                        state.borrow().undefined.clone()
-                    };
-                    inner_state.insert(ident.clone(), arg_eval, Lifetime::Default);
-                }
-                inner_interpret(body, rc_mut_new(inner_state))
-            }
-            Value::String(str) => {
-                let [arg] = args else { return  Err("indexing string requires one argument".to_string());};
-                let rhs = inner_interpret(arg, state.clone())?;
-                let Value::Number(rhs) = rhs.clone_inner() else { return Err("indexing string requires number".to_string());};
-                let rhs = rhs as usize;
-                let char = str.chars().nth(rhs);
-                char.map_or_else(|| Ok(state.borrow().undefined.clone()), |char| Ok(Pointer::from(Value::String(Rc::from(char.to_string())))))
-            }
-            other => {
-                let [arg] = args else { return Err(format!("`{other}` is not a function")) };
-                let rhs = inner_interpret(arg, state)?;
-                Ok((other.clone() * rhs.clone_inner()).into())
-            },
         }
-    )
+        Value::Keyword(Keyword::Delete) => {
+            if let [Syntax::Ident(key)] = args {
+                state.borrow_mut().delete(key.clone());
+            }
+            Ok(state.borrow().undefined.clone())
+        }
+        Value::Keyword(Keyword::Forget) => {
+            let [Syntax::Ident(ident)] = args else {
+                return Err(String::from("`forget` keyword requires one argument"));
+            };
+            let undefined = state.borrow().undefined.clone();
+            state
+                .borrow_mut()
+                .insert(ident.clone(), undefined, Lifetime::Default);
+            Ok(state.borrow().undefined.clone())
+        }
+        Value::Keyword(Keyword::Previous) => {
+            let [arg] = args else {
+                return Err(String::from("`previous` keyword requires one argument"));
+            };
+            let evaluated = inner_interpret(arg, state.clone())?;
+            match evaluated.as_var() {
+                Some(eval) => Ok(eval.borrow().previous.as_ref().map_or_else(
+                    move || state.borrow().undefined.clone(),
+                    |prev| Pointer::ConstConst(Rc::new(prev.clone())),
+                )),
+                None => Ok(state.borrow().undefined.clone()),
+            }
+        }
+        Value::Keyword(Keyword::Current) => {
+            let [arg] = args else {
+                return Err(String::from("`current` keyword requires one argument"));
+            };
+            inner_interpret(arg, state)
+        }
+        Value::Keyword(Keyword::Next) => {
+            let [arg] = args else {
+                return Err(String::from("`next` keyword requires one argument"));
+            };
+            let evaluated = inner_interpret(arg, state)?;
+            let next_ptr = Pointer::ConstVar(rc_mut_new(Value::empty_object().into()));
+            evaluated.as_var().map_or_else(
+                || Err(String::from("`next` keyword requires a mutable value")),
+                |eval| {
+                    eval.borrow_mut().add_next_handle(next_ptr.clone());
+                    // println!("{eval:?}");
+                    // println!("{next_ptr:?}");
+                    Ok(next_ptr)
+                },
+            )
+        }
+        Value::Keyword(Keyword::When) => {
+            let [condition, body] = args else {
+                return Err(String::from(
+                    "`when` keyword requires two arguments; condition and body",
+                ));
+            };
+            let idents = find_idents_in_syntax(condition);
+            for ident in idents {
+                let Some(var) = state.borrow_mut().get(ident).as_var() else {
+                    continue;
+                };
+                var.borrow_mut().add_event_listener(
+                    Syntax::UnaryOperation(
+                        UnaryOperation::Call(vec![condition.clone(), body.clone()]),
+                        Box::new(Syntax::Ident("if".into())),
+                    ),
+                    state.clone(),
+                );
+            }
+            Ok(state.borrow().undefined.clone())
+        }
+        Value::Keyword(Keyword::Function) => {
+            let [Syntax::Ident(name), args, body] = args else {
+                return Err(format!(
+                    "Invalid arguments for `function`: `{args:?}`; expected name, args, and body"
+                ));
+            };
+            let args = match args {
+                Syntax::Block(args) => args.clone(),
+                other => vec![other.clone()],
+            };
+            let args: Vec<Rc<str>> = args
+                .into_iter()
+                .map(|syn| match syn {
+                    Syntax::Ident(str) => Ok(str),
+                    other => Err(format!("Invalid parameter name: `{other}`")),
+                })
+                .collect::<Result<_, _>>()?;
+            let inner_val = Value::Function(args, body.clone());
+            state
+                .borrow_mut()
+                .insert(name.clone(), Pointer::from(inner_val), Lifetime::Default);
+            Ok(state.borrow().undefined.clone())
+        }
+        Value::Keyword(Keyword::Class) => {
+            let [Syntax::Ident(name), Syntax::Block(body)] = args else {
+                return Err(format!(
+                    "Invalid arguments for `class`: `{args:?}`; expected name and body"
+                ));
+            };
+            let inner_value = Value::Class(body.clone());
+            state.borrow_mut().insert(
+                name.clone(),
+                Pointer::ConstVar(rc_mut_new(inner_value.into())),
+                Lifetime::Default,
+            );
+            Ok(state.borrow().undefined.clone())
+        }
+        Value::Keyword(Keyword::New) => {
+            let [class] = args else {
+                return Err(format!(
+                    "Invalid arguments for `new`: `{args:?}`; expected a class"
+                ));
+            };
+            let class_pointer = inner_interpret(class, state.clone())?;
+            let Some(class_ref) = class_pointer.as_var() else {
+                return Err(format!(
+                    "Expected a mutable reference to a class; got `{class_pointer:?}`"
+                ));
+            };
+            class_ref.borrow_mut().assign(Value::empty_object());
+            let Some(Value::Class(class_body)) = class_ref.borrow().previous.clone() else {
+                return Err(format!(
+                    "Expected a mutable reference to a class; got `{:?}`",
+                    class_ref.borrow()
+                ));
+            };
+            let inner_state = rc_mut_new(State::from_parent(state));
+            for statement in class_body {
+                inner_interpret(&statement, inner_state.clone())?;
+            }
+            let inner_obj = inner_state.borrow().locals_to_object();
+            Ok(Pointer::from(Value::Object(inner_obj)))
+        }
+        Value::Keyword(Keyword::Eval) => {
+            let [body] = args else {
+                return Err(format!(
+                    "You can only `eval` one thing at a time; got `{args:?}`"
+                ));
+            };
+            let text = inner_interpret(body, state.clone())?.to_string();
+            // #[cfg(debug_assertions)]
+            // println!("Evaluating Inner: {text}");
+            let tokens = crate::lexer::tokenize(&text)?;
+            // #[cfg(debug_assertions)]
+            // println!("Evaluating Tokens: {tokens:?}");
+            let syntax = crate::parser::parse(tokens)?;
+            // #[cfg(debug_assertions)]
+            // println!("Evaluating Syntax: {syntax:?}");
+            inner_interpret(&syntax, state)
+        }
+        Value::Object(obj) => {
+            let Some(call) = obj.get(&"call".into()) else {
+                return Err(format!("`Object({obj:?})` is not a function"));
+            };
+            let mut new_state = State::from_parent(state);
+            new_state.insert("self".into(), func.clone(), Lifetime::Default);
+            interpret_function(call, args, rc_mut_new(new_state))
+        }
+        Value::Function(fn_args, body) => {
+            let mut inner_state = State::from_parent(state.clone());
+            for (idx, ident) in fn_args.iter().enumerate() {
+                let arg_eval = if let Some(syn) = args.get(idx) {
+                    inner_interpret(syn, state.clone())?
+                } else {
+                    state.borrow().undefined.clone()
+                };
+                inner_state.insert(ident.clone(), arg_eval, Lifetime::Default);
+            }
+            inner_interpret(body, rc_mut_new(inner_state))
+        }
+        Value::String(str) => {
+            let [arg] = args else {
+                return Err("indexing string requires one argument".to_string());
+            };
+            let rhs = inner_interpret(arg, state.clone())?;
+            let Value::Number(rhs) = rhs.clone_inner() else {
+                return Err("indexing string requires number".to_string());
+            };
+            let rhs = rhs as usize;
+            let char = str.chars().nth(rhs);
+            char.map_or_else(
+                || Ok(state.borrow().undefined.clone()),
+                |char| Ok(Pointer::from(Value::String(Rc::from(char.to_string())))),
+            )
+        }
+        other => {
+            let [arg] = args else {
+                return Err(format!("`{other}` is not a function"));
+            };
+            let rhs = inner_interpret(arg, state)?;
+            Ok((other.clone() * rhs.clone_inner()).into())
+        }
+    })
 }
 
 fn find_idents_in_syntax(syn: &Syntax) -> Vec<Rc<str>> {
@@ -358,7 +428,8 @@ fn find_idents_in_syntax(syn: &Syntax) -> Vec<Rc<str>> {
         Syntax::Ident(id) => vec![id.clone()],
         Syntax::Block(stmts) => stmts.iter().flat_map(find_idents_in_syntax).collect(),
         Syntax::UnaryOperation(UnaryOperation::Call(args), func) => args
-            .iter().chain(std::iter::once(&**func))
+            .iter()
+            .chain(std::iter::once(&**func))
             .flat_map(find_idents_in_syntax)
             .collect(),
         Syntax::UnaryOperation(UnaryOperation::Negate, syn) => find_idents_in_syntax(syn),

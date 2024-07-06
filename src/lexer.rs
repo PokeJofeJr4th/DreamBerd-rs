@@ -66,6 +66,9 @@ fn lex_string<T: Iterator<Item = char>>(chars: &mut Peekable<T>, end: char) -> S
                     ));
                 }
                 outer_buf.push(StringSegment::Ident(ident_buf.into()));
+            } else if ident_buf.contains('$') {
+                let bits = ident_buf.split('$').collect::<Vec<_>>();
+                outer_buf.push(StringSegment::Escudo(bits[0].into(), bits[1].into()));
             } else {
                 string_buf.push('{');
                 string_buf.push_str(&ident_buf);
@@ -103,7 +106,7 @@ fn count_char<T: Iterator<Item = char>, F: Fn(u8) -> Token>(
 
 fn inner_tokenize<T: Iterator<Item = char>>(chars: &mut Peekable<T>) -> SResult<Option<Token>> {
     let Some(char) = chars.next() else {
-        return Err(String::from("Unexpected end of file"))
+        return Err(String::from("Unexpected end of file"));
     };
     Ok(Some(match char {
         '{' => Token::LSquirrely,

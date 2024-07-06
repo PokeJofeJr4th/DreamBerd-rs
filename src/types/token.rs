@@ -4,6 +4,9 @@ use std::{fmt::Display, rc::Rc};
 pub enum StringSegment {
     String(Rc<str>),
     Ident(Rc<str>),
+    ///  The symbol for the Cape Verdean escudo is placed in the decimal separator position, as in 2$50.
+    /// Developers from the Republic of Cape Verde can benefit from this syntax: `{e$code}`
+    Escudo(Rc<str>, Rc<str>),
 }
 
 impl Display for StringSegment {
@@ -11,6 +14,7 @@ impl Display for StringSegment {
         match self {
             Self::Ident(ident) => write!(f, "${{{ident}}}"),
             Self::String(str) => write!(f, "{str}"),
+            Self::Escudo(var, field) => write!(f, "{{{var}${field}}}"),
         }
     }
 }
